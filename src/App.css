@@ -161,3 +161,77 @@
     align-items: stretch;
   }
 }
+
+
+/* 퀘스트 등록 폼 */
+.quest-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.quest-form input,
+.quest-form select {
+  padding: 12px;
+  border: 1px solid #ded1ee;
+  border-radius: 10px;
+  background: white;
+  color: #352d47;
+  font: inherit;
+}
+
+.quest-form input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.quest-form button {
+  border: none;
+  border-radius: 10px;
+  background: #a486d4;
+  color: white;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quest-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.quest-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quest-item .delete-button {
+  background: #f4e8ed;
+  color: #98566d;
+}
+
+.quest-item .delete-button:hover:not(:disabled) {
+  background: #ead7df;
+}
+
+.quest-error {
+  color: #b43d52;
+  background: #fff0f2;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.quest-message {
+  color: #80758f;
+  text-align: center;
+  padding: 26px 10px;
+}
+
+@media (max-width: 760px) {
+  .quest-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}

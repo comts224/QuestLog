@@ -69,7 +69,7 @@ function App() {
         </p>
       )}
 
-      <Dashboard />
+      <Dashboard userId={user.uid} />
     </>
   )
 }
