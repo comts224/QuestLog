@@ -235,3 +235,64 @@
     flex-wrap: wrap;
   }
 }
+
+
+
+/* 퀘스트 수정 입력창 */
+.quest-edit-form {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.quest-edit-form input,
+.quest-edit-form select {
+  padding: 10px;
+  border: 1px solid #d8c8e9;
+  border-radius: 10px;
+  background: white;
+  color: #352d47;
+  font: inherit;
+}
+
+.quest-edit-form input {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* 수정 버튼 */
+.quest-item .edit-button {
+  background: #ebe3fa;
+  color: #6d4b95;
+}
+
+.quest-item .edit-button:hover:not(:disabled) {
+  background: #ddcff3;
+}
+
+/* 완료 취소, 수정 취소 버튼 */
+.quest-item .cancel-button {
+  background: #f0edf4;
+  color: #685a78;
+}
+
+.quest-item .cancel-button:hover:not(:disabled) {
+  background: #e1dbe9;
+}
+
+.quest-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .quest-edit-form {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
