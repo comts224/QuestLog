@@ -1,4 +1,3 @@
-
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   addDoc,
@@ -11,13 +10,19 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import './App.css'
+import {
+  calculateReward,
+  getStatType,
+  type Difficulty,
+  type QuestCategory,
+} from './strategies/rewardStrategy'
 
-type Difficulty = '쉬움' | '보통' | '어려움'
 
 type Quest = {
   id: string
   title: string
   difficulty: Difficulty
+  category: QuestCategory
   completed: boolean
   dateKey: string
 }
@@ -26,12 +31,9 @@ type DashboardProps = {
   userId: string
 }
 
-// 난이도별 퀘스트 보상
-const rewards = {
-  쉬움: { exp: 10, gold: 5 },
-  보통: { exp: 20, gold: 10 },
-  어려움: { exp: 35, gold: 20 },
-}
+// 기존 퀘스트에는 category 필드가 없을 수 있습니다.
+const DEFAULT_CATEGORY: QuestCategory = '과제·업무'
+const CATEGORIES: QuestCategory[] = ['공부·독서', '운동', '생활·건강', '과제·업무']
 
 // 한국시간 기준 오늘 날짜
 function getTodayKey(): string {
@@ -66,12 +68,14 @@ function Dashboard({ userId }: DashboardProps) {
   // 새 퀘스트 등록용 상태
   const [title, setTitle] = useState('')
   const [difficulty, setDifficulty] = useState<Difficulty>('보통')
+  const [category, setCategory] = useState<QuestCategory>('공부·독서')
 
   // 퀘스트 수정용 상태
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDifficulty, setEditDifficulty] =
     useState<Difficulty>('보통')
+  const [editCategory, setEditCategory] = useState<QuestCategory>('공부·독서')
 
   // 화면 상태
   const [loading, setLoading] = useState(true)
@@ -96,6 +100,7 @@ function Dashboard({ userId }: DashboardProps) {
             id: item.id,
             title: data.title,
             difficulty: data.difficulty,
+            category: CATEGORIES.includes(data.category) ? data.category : DEFAULT_CATEGORY,
             completed: data.completed,
             dateKey: data.dateKey,
           }
@@ -132,6 +137,7 @@ function Dashboard({ userId }: DashboardProps) {
       await addDoc(collection(db, 'users', userId, 'quests'), {
         title: trimmedTitle,
         difficulty,
+        category,
         completed: false,
         dateKey: getTodayKey(),
         createdAt: serverTimestamp(),
@@ -140,6 +146,7 @@ function Dashboard({ userId }: DashboardProps) {
 
       setTitle('')
       setDifficulty('보통')
+      setCategory('공부·독서')
     } catch {
       setError('퀘스트 등록에 실패했습니다.')
     } finally {
@@ -198,6 +205,7 @@ function Dashboard({ userId }: DashboardProps) {
     setEditingId(quest.id)
     setEditTitle(quest.title)
     setEditDifficulty(quest.difficulty)
+    setEditCategory(quest.category)
     setError('')
   }
 
@@ -206,6 +214,7 @@ function Dashboard({ userId }: DashboardProps) {
     setEditingId(null)
     setEditTitle('')
     setEditDifficulty('보통')
+    setEditCategory('공부·독서')
     setError('')
   }
 
@@ -238,6 +247,7 @@ function Dashboard({ userId }: DashboardProps) {
         {
           title: trimmedTitle,
           difficulty: editDifficulty,
+          category: editCategory,
           updatedAt: serverTimestamp(),
         }
       )
@@ -290,15 +300,25 @@ function Dashboard({ userId }: DashboardProps) {
   // 완료 취소 시 보상이 자동으로 제외됩니다.
   const totalExp = quests.reduce(
     (sum, quest) =>
-      sum + (quest.completed ? rewards[quest.difficulty].exp : 0),
+      sum + (quest.completed ? calculateReward(quest.difficulty).exp : 0),
     0
   )
 
   const gold = quests.reduce(
     (sum, quest) =>
-      sum + (quest.completed ? rewards[quest.difficulty].gold : 0),
+      sum + (quest.completed ? calculateReward(quest.difficulty).gold : 0),
     0
   )
+
+  // 완료된 퀘스트의 카테고리에 맞춰 캐릭터 능력치 합산
+  // 아직 캐릭터 문서를 따로 만들지 않았으므로 퀘스트 기록에서 계산합니다.
+  const stats = quests.reduce((acc, quest) => {
+    if (quest.completed) {
+      const stat = getStatType(quest.category)
+      acc[stat] += calculateReward(quest.difficulty).statPoint
+    }
+    return acc
+  }, { intelligence: 0, strength: 0, vitality: 0, diligence: 0 })
 
   const character = calculateLevel(totalExp)
 
@@ -342,8 +362,16 @@ function Dashboard({ userId }: DashboardProps) {
           <p className="gold">🪙 보유 골드: {gold} G</p>
 
           <p className="character-info">
-            퀘스트를 완료하면 경험치와 골드를 얻습니다.
+            퀘스트를 완료하면 경험치, 골드와 능력치를 얻습니다.
           </p>
+
+          <div className="character-stats">
+            <h3>모험가 능력치</h3>
+            <p>🧠 지능 INT: {stats.intelligence}</p>
+            <p>💪 힘 STR: {stats.strength}</p>
+            <p>❤️ 활력 VIT: {stats.vitality}</p>
+            <p>🛡️ 성실성 DIL: {stats.diligence}</p>
+          </div>
         </section>
 
         {/* 퀘스트 관리 */}
@@ -367,6 +395,14 @@ function Dashboard({ userId }: DashboardProps) {
               aria-label="새 퀘스트 제목"
               required
             />
+
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value as QuestCategory)}
+              aria-label="새 퀘스트 카테고리"
+            >
+              {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
 
             <select
               value={difficulty}
@@ -403,7 +439,7 @@ function Dashboard({ userId }: DashboardProps) {
           ) : (
             <div className="quest-list">
               {todayQuests.map((quest) => {
-                const reward = rewards[quest.difficulty]
+                const reward = calculateReward(quest.difficulty)
                 const isEditing = editingId === quest.id
                 const isBusy = busyId !== null
 
@@ -424,6 +460,14 @@ function Dashboard({ userId }: DashboardProps) {
                           aria-label="수정할 퀘스트 제목"
                           required
                         />
+
+                        <select
+                          value={editCategory}
+                          onChange={(event) => setEditCategory(event.target.value as QuestCategory)}
+                          aria-label="수정할 퀘스트 카테고리"
+                        >
+                          {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
+                        </select>
 
                         <select
                           value={editDifficulty}
@@ -459,7 +503,7 @@ function Dashboard({ userId }: DashboardProps) {
                         <div>
                           <h3>{quest.title}</h3>
                           <p>
-                            난이도: {quest.difficulty} ·
+                            {quest.category} · 난이도: {quest.difficulty} ·
                             EXP +{reward.exp} · 골드 +{reward.gold}
                           </p>
                         </div>
