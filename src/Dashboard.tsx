@@ -1,20 +1,18 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import {
-  addDoc,
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   runTransaction,
   serverTimestamp,
-  updateDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
 import ShopPanel from './ShopPanel'
+import DiaryPanel, { readDiaries, type SavedDiary } from './DiaryPanel'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
   calculateReward,
@@ -90,6 +88,9 @@ function Dashboard({ userId }: DashboardProps) {
   const [error, setError] = useState('')
   const [shopState, setShopState] = useState(EMPTY_SHOP)
   const [shopLoading, setShopLoading] = useState(true)
+  const [diaries, setDiaries] = useState<SavedDiary[]>([])
+  const [diariesLoading, setDiariesLoading] = useState(true)
+  const [todayKey, setTodayKey] = useState(getTodayKey())
 
   // Firebase에서 로그인한 사용자의 퀘스트 가져오기
   useEffect(() => {
@@ -139,10 +140,32 @@ function Dashboard({ userId }: DashboardProps) {
     })
   }, [userId])
 
+  // 날짜가 바뀌면 대시보드도 오늘 날짜 기준으로 전환합니다.
+  useEffect(() => {
+    const timer = window.setInterval(() => setTodayKey(getTodayKey()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  // 마감한 날짜를 구독해서 퀘스트 잠금과 일기장에 함께 사용합니다.
+  useEffect(() => {
+    setDiaries([])
+    setDiariesLoading(true)
+    return onSnapshot(collection(db, 'users', userId, 'diaries'), (snapshot) => {
+      setDiaries(readDiaries(snapshot))
+      setDiariesLoading(false)
+    }, () => {
+      setError('모험 일기장을 불러오지 못했습니다.')
+      setDiariesLoading(false)
+    })
+  }, [userId])
+
+  const closedDates = new Set(diaries.map((entry) => entry.dateKey))
+  const todayClosed = closedDates.has(todayKey)
+
   // 퀘스트 등록
   async function addQuest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (saving || loading) return
+    if (saving || loading || diariesLoading || todayClosed) return
 
     const trimmedTitle = title.trim()
 
@@ -155,21 +178,27 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      await addDoc(collection(db, 'users', userId, 'quests'), {
-        title: trimmedTitle,
-        difficulty,
-        category,
-        completed: false,
-        dateKey: getTodayKey(),
-        createdAt: serverTimestamp(),
-        completedAt: null,
+      const questRef = doc(collection(db, 'users', userId, 'quests'))
+      const diaryRef = doc(db, 'users', userId, 'diaries', todayKey)
+      await runTransaction(db, async (transaction) => {
+        const diary = await transaction.get(diaryRef)
+        if (diary.exists()) throw new Error('DAY_CLOSED')
+        transaction.set(questRef, {
+          title: trimmedTitle,
+          difficulty,
+          category,
+          completed: false,
+          dateKey: todayKey,
+          createdAt: serverTimestamp(),
+          completedAt: null,
+        })
       })
 
       setTitle('')
       setDifficulty('보통')
       setCategory('공부·독서')
     } catch {
-      setError('퀘스트 등록에 실패했습니다.')
+      setError('퀘스트 등록에 실패했습니다. 오늘이 마감되었는지 확인해 주세요.')
     } finally {
       setSaving(false)
     }
@@ -177,19 +206,21 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 퀘스트 완료
   async function completeQuest(quest: Quest) {
-    if (quest.completed || busyId !== null || loading) return
+    if (quest.completed || busyId !== null || loading || diariesLoading || closedDates.has(quest.dateKey)) return
 
     setBusyId(quest.id)
     setError('')
 
     try {
-      await updateDoc(
-        doc(db, 'users', userId, 'quests', quest.id),
-        {
-          completed: true,
-          completedAt: serverTimestamp(),
-        }
-      )
+      const questRef = doc(db, 'users', userId, 'quests', quest.id)
+      const diaryRef = doc(db, 'users', userId, 'diaries', quest.dateKey)
+      await runTransaction(db, async (transaction) => {
+        const diary = await transaction.get(diaryRef)
+        const current = await transaction.get(questRef)
+        if (diary.exists()) throw new Error('DAY_CLOSED')
+        if (!current.exists() || current.data().completed) throw new Error('QUEST_CHANGED')
+        transaction.update(questRef, { completed: true, completedAt: serverTimestamp() })
+      })
     } catch {
       setError('퀘스트 완료 처리에 실패했습니다.')
     } finally {
@@ -199,7 +230,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 완료 취소 시 잔액이 음수가 되지 않도록 구매 기록과 함께 트랜잭션으로 확인합니다.
   async function cancelCompletion(quest: Quest) {
-    if (!quest.completed || busyId !== null || loading || shopLoading) return
+    if (!quest.completed || busyId !== null || loading || shopLoading || diariesLoading || closedDates.has(quest.dateKey)) return
 
     setBusyId(quest.id)
     setError('')
@@ -210,6 +241,8 @@ function Dashboard({ userId }: DashboardProps) {
       // 최신 화면의 퀘스트 ID를 모두 트랜잭션에서 다시 읽어 합산합니다.
       const questRefs = quests.map((item) => doc(db, 'users', userId, 'quests', item.id))
       await runTransaction(db, async (transaction) => {
+        const diarySnap = await transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey))
+        if (diarySnap.exists()) throw new Error('DAY_CLOSED')
         const walletSnap = await transaction.get(walletRef)
         const currentShop = parseShop(walletSnap.data())
         const questDocs = await Promise.all(questRefs.map((ref) => transaction.get(ref)))
@@ -237,7 +270,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // [추가] 수정 버튼을 눌렀을 때
   function startEditing(quest: Quest) {
-    if (quest.completed || busyId !== null) return
+    if (quest.completed || busyId !== null || diariesLoading || closedDates.has(quest.dateKey)) return
 
     setEditingId(quest.id)
     setEditTitle(quest.title)
@@ -259,7 +292,7 @@ function Dashboard({ userId }: DashboardProps) {
   async function saveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!editingId || busyId !== null || loading) return
+    if (!editingId || busyId !== null || loading || diariesLoading) return
 
     const trimmedTitle = editTitle.trim()
 
@@ -270,7 +303,7 @@ function Dashboard({ userId }: DashboardProps) {
 
     const target = quests.find((quest) => quest.id === editingId)
 
-    if (!target || target.completed) {
+    if (!target || target.completed || closedDates.has(target.dateKey)) {
       setError('완료한 퀘스트는 수정할 수 없습니다.')
       return
     }
@@ -279,15 +312,18 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      await updateDoc(
-        doc(db, 'users', userId, 'quests', editingId),
-        {
+      const questRef = doc(db, 'users', userId, 'quests', editingId)
+      await runTransaction(db, async (transaction) => {
+        const diary = await transaction.get(doc(db, 'users', userId, 'diaries', target.dateKey))
+        const current = await transaction.get(questRef)
+        if (diary.exists() || !current.exists() || current.data().completed) throw new Error('DAY_CLOSED')
+        transaction.update(questRef, {
           title: trimmedTitle,
           difficulty: editDifficulty,
           category: editCategory,
           updatedAt: serverTimestamp(),
-        }
-      )
+        })
+      })
 
       cancelEditing()
     } catch {
@@ -299,7 +335,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 퀘스트 삭제 (미완료 상태만)
   async function removeQuest(quest: Quest) {
-    if (quest.completed || busyId !== null || loading) return
+    if (quest.completed || busyId !== null || loading || diariesLoading || closedDates.has(quest.dateKey)) return
 
     if (!window.confirm(`"${quest.title}" 퀘스트를 삭제할까요?`)) {
       return
@@ -309,9 +345,13 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      await deleteDoc(
-        doc(db, 'users', userId, 'quests', quest.id)
-      )
+      const questRef = doc(db, 'users', userId, 'quests', quest.id)
+      await runTransaction(db, async (transaction) => {
+        const diary = await transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey))
+        const current = await transaction.get(questRef)
+        if (diary.exists() || !current.exists() || current.data().completed) throw new Error('DAY_CLOSED')
+        transaction.delete(questRef)
+      })
 
       if (editingId === quest.id) {
         setEditingId(null)
@@ -324,7 +364,6 @@ function Dashboard({ userId }: DashboardProps) {
   }
 
   // 오늘의 퀘스트
-  const todayKey = getTodayKey()
   const todayQuests = quests.filter(
     (quest) => quest.dateKey === todayKey
   )
@@ -421,6 +460,7 @@ function Dashboard({ userId }: DashboardProps) {
             </div>
           </div>
 
+          {todayClosed && <p className="quest-message">📖 오늘은 이미 마감되었습니다. 퀘스트를 수정할 수 없습니다.</p>}
           {/* 퀘스트 등록 폼 */}
           <form className="quest-form" onSubmit={addQuest}>
             <input
@@ -452,7 +492,7 @@ function Dashboard({ userId }: DashboardProps) {
               <option value="어려움">어려움</option>
             </select>
 
-            <button type="submit" disabled={saving || loading}>
+            <button type="submit" disabled={saving || loading || diariesLoading || todayClosed}>
               {saving ? '저장 중...' : '퀘스트 등록'}
             </button>
           </form>
@@ -477,7 +517,7 @@ function Dashboard({ userId }: DashboardProps) {
               {todayQuests.map((quest) => {
                 const reward = calculateReward(quest.difficulty)
                 const isEditing = editingId === quest.id
-                const isBusy = busyId !== null
+                const isBusy = busyId !== null || diariesLoading || closedDates.has(quest.dateKey)
 
                 return (
                   <div className="quest-item" key={quest.id}>
@@ -593,6 +633,8 @@ function Dashboard({ userId }: DashboardProps) {
           )}
         </section>
         <ShopPanel userId={userId} earnedGold={gold} />
+        <DiaryPanel userId={userId} quests={quests} diaries={diaries}
+          todayKey={todayKey} questsLoading={loading} diariesLoading={diariesLoading} />
       </main>
     </div>
   )
