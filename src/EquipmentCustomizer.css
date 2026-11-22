@@ -1,0 +1,52 @@
+.equipment-customizer {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.equipment-customizer .character-image {
+  width: 100%;
+}
+
+.equipment-controls {
+  width: min(100%, 340px);
+  border: 1px solid rgba(169, 150, 222, .35);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(114, 89, 170, .12);
+}
+
+.equipment-controls h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.equipment-hint {
+  margin: 0 0 12px;
+  font-size: .82rem;
+  opacity: .8;
+}
+
+.equipment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  font-size: .9rem;
+}
+
+.equipment-row select {
+  min-width: 150px;
+  max-width: 65%;
+  border-radius: 8px;
+  border: 1px solid #a99ad2;
+  padding: 7px 8px;
+  background: #fff;
+  color: #2d2445;
+}
+
+.equipment-row select:disabled { opacity: .6; }
+.equipment-error { color: #c32d4b; font-size: .85rem; margin: 10px 0 0; }

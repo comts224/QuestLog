@@ -12,7 +12,7 @@ import {
 import { db } from './firebase'
 import './App.css'
 import ProfileNames from './ProfileNames'
-import PixelCharacter from './PixelCharacter'
+import EquipmentCustomizer from './EquipmentCustomizer'
 import {
   calculateReward,
   getStatType,
@@ -338,9 +338,7 @@ function Dashboard({ userId }: DashboardProps) {
         <section className="panel character-panel">
           <h2>나의 모험가</h2>
 
-          <div className="character-image">
-            <PixelCharacter />
-          </div>
+          <EquipmentCustomizer userId={userId} />
 
           <ProfileNames userId={userId} level={character.level} />
 
