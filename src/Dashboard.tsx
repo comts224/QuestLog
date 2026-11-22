@@ -1,3 +1,4 @@
+
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   addDoc,
@@ -10,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import './App.css'
+import ProfileNames from './ProfileNames'
 import {
   calculateReward,
   getStatType,
@@ -339,7 +341,7 @@ function Dashboard({ userId }: DashboardProps) {
             🧙
           </div>
 
-          <h3>Lv. {character.level} 초보 모험가</h3>
+          <ProfileNames userId={userId} level={character.level} />
 
           <div className="exp-label">
             <span>EXP</span>

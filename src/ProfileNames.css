@@ -1,0 +1,13 @@
+.profile-names { margin: 12px 0 16px; }
+.profile-names h3 { margin: 8px 0; }
+.profile-names-summary { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 12px; }
+.profile-names-summary p { margin: 4px 0; }
+.profile-names-edit, .profile-names-actions button { border: 0; border-radius: 10px; padding: 9px 13px; cursor: pointer; font: inherit; font-weight: 600; color: #fff; background: #7054c5; }
+.profile-names-form { display: grid; gap: 8px; max-width: 340px; margin: 14px auto; text-align: left; }
+.profile-names-form label { font-size: 0.9rem; font-weight: 700; }
+.profile-names-form input { box-sizing: border-box; width: 100%; border: 1px solid #a79ad1; border-radius: 10px; padding: 10px 12px; color: #28233a; background: white; font: inherit; }
+.profile-names-note { margin: 4px 0; font-size: 0.9rem; opacity: 0.8; }
+.profile-names-actions { display: flex; gap: 8px; }
+.profile-names-actions button:disabled { opacity: 0.6; cursor: not-allowed; }
+.profile-names-actions .profile-names-cancel { background: #767085; }
+.profile-names-error { color: #ba2539; font-weight: 600; font-size: 0.9rem; }
