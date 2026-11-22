@@ -1,0 +1,13 @@
+.retry-panel { margin-top: 16px; }
+.retry-description { color: #cfc4e9; line-height: 1.7; }
+.retry-list { display: grid; gap: 10px; margin-top: 16px; }
+.retry-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid rgba(167,139,250,.32); border-radius: 12px; background: rgba(35,23,65,.45); }
+.retry-item-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.retry-item-info strong { color: #fff; }
+.retry-item-info span { color: #cfbfec; font-size: .9rem; }
+.retry-item button { flex-shrink: 0; padding: 10px 13px; border-radius: 9px; cursor: pointer; }
+.retry-item button:disabled { cursor: not-allowed; opacity: .58; }
+.retry-status { color: #f6d796; }
+.retry-success { color: #b4f0c8; }
+.retry-error { color: #ffb4c1; }
+@media(max-width: 600px) { .retry-item { align-items: stretch; flex-direction: column; } .retry-item button { width: 100%; } }

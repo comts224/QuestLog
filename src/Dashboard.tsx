@@ -13,6 +13,7 @@ import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
 import ShopPanel from './ShopPanel'
 import DiaryPanel, { readDiaries, type SavedDiary } from './DiaryPanel'
+import RetryQuests from './RetryQuests'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
   calculateReward,
@@ -632,6 +633,9 @@ function Dashboard({ userId }: DashboardProps) {
             </div>
           )}
         </section>
+        <RetryQuests userId={userId} diaries={diaries} todayKey={todayKey}
+          todayClosed={todayClosed} loading={loading || diariesLoading}
+          todayQuestIds={todayQuests.map((quest) => quest.id)} />
         <ShopPanel userId={userId} earnedGold={gold} />
         <DiaryPanel userId={userId} quests={quests} diaries={diaries}
           todayKey={todayKey} questsLoading={loading} diariesLoading={diariesLoading} />
