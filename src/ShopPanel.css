@@ -1,0 +1,13 @@
+.shop-panel { grid-column: 1 / -1; }
+.shop-description,.shop-message { font-size: .88rem; opacity: .85; }
+.shop-balance { font-weight: 700; margin: 12px 0; }
+.shop-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+.shop-item { border: 1px solid rgba(169,150,222,.5); border-radius: 14px; padding: 16px 12px; text-align: center; background: rgba(114,89,170,.10); }
+.shop-item-symbol { font-size: 2rem; margin-bottom: 8px; }
+.shop-item h3 { margin: 2px 0 8px; font-size: 1rem; }
+.shop-item p { margin: 6px 0; font-size: .82rem; }
+.shop-item .shop-price { font-weight: 700; font-size: 1rem; }
+.shop-item button { padding: 8px 14px; border-radius: 10px; cursor: pointer; }
+.shop-item button:disabled { cursor: not-allowed; opacity: .6; }
+.shop-error { color: #c32d4b; font-size: .85rem; }
+@media(max-width:640px){.shop-grid{grid-template-columns:1fr}}

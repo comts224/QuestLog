@@ -6,6 +6,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore'
@@ -13,6 +14,8 @@ import { db } from './firebase'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
+import ShopPanel from './ShopPanel'
+import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
   calculateReward,
   getStatType,
@@ -85,6 +88,8 @@ function Dashboard({ userId }: DashboardProps) {
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [shopState, setShopState] = useState(EMPTY_SHOP)
+  const [shopLoading, setShopLoading] = useState(true)
 
   // Firebase에서 로그인한 사용자의 퀘스트 가져오기
   useEffect(() => {
@@ -119,6 +124,19 @@ function Dashboard({ userId }: DashboardProps) {
     )
 
     return () => unsubscribe()
+  }, [userId])
+
+  // 상점 구매 기록을 구독합니다. 기존 퀘스트/능력치 문서는 수정하지 않습니다.
+  useEffect(() => {
+    setShopState(EMPTY_SHOP)
+    setShopLoading(true)
+    return onSnapshot(doc(db, 'users', userId, 'shop', 'state'), (snapshot) => {
+      setShopState(parseShop(snapshot.data()))
+      setShopLoading(false)
+    }, () => {
+      setError('골드 사용 내역을 불러오지 못했습니다.')
+      setShopLoading(false)
+    })
   }, [userId])
 
   // 퀘스트 등록
@@ -179,23 +197,39 @@ function Dashboard({ userId }: DashboardProps) {
     }
   }
 
-  // [추가] 퀘스트 완료 취소
+  // 완료 취소 시 잔액이 음수가 되지 않도록 구매 기록과 함께 트랜잭션으로 확인합니다.
   async function cancelCompletion(quest: Quest) {
-    if (!quest.completed || busyId !== null || loading) return
+    if (!quest.completed || busyId !== null || loading || shopLoading) return
 
     setBusyId(quest.id)
     setError('')
 
     try {
-      await updateDoc(
-        doc(db, 'users', userId, 'quests', quest.id),
-        {
-          completed: false,
-          completedAt: null,
-        }
-      )
-    } catch {
-      setError('퀘스트 완료 취소에 실패했습니다.')
+      const questRef = doc(db, 'users', userId, 'quests', quest.id)
+      const walletRef = doc(db, 'users', userId, 'shop', 'state')
+      // 최신 화면의 퀘스트 ID를 모두 트랜잭션에서 다시 읽어 합산합니다.
+      const questRefs = quests.map((item) => doc(db, 'users', userId, 'quests', item.id))
+      await runTransaction(db, async (transaction) => {
+        const walletSnap = await transaction.get(walletRef)
+        const currentShop = parseShop(walletSnap.data())
+        const questDocs = await Promise.all(questRefs.map((ref) => transaction.get(ref)))
+        const target = questDocs.find((item) => item.id === questRef.id)
+        if (!target?.exists() || !target.data().completed) throw new Error('QUEST_CHANGED')
+        const earnedAfterCancel = questDocs.reduce((sum, item) => {
+          if (!item.exists() || item.id === questRef.id) return sum
+          const data = item.data()
+          return sum + (data.completed && ['쉬움', '보통', '어려움'].includes(data.difficulty)
+            ? calculateReward(data.difficulty as Difficulty).gold : 0)
+        }, 0)
+        if (earnedAfterCancel < currentShop.spentGold) throw new Error('SPENT_REWARD')
+        transaction.update(questRef, { completed: false, completedAt: null })
+      })
+    } catch (cause) {
+      if (cause instanceof Error && cause.message === 'SPENT_REWARD') {
+        setError('이미 상점에서 사용한 골드 때문에 완료를 취소할 수 없습니다.')
+      } else {
+        setError('완료 취소에 실패했습니다. 새로고침 후 다시 시도해 주세요.')
+      }
     } finally {
       setBusyId(null)
     }
@@ -323,6 +357,7 @@ function Dashboard({ userId }: DashboardProps) {
     return acc
   }, { intelligence: 0, strength: 0, vitality: 0, diligence: 0 })
 
+  const availableGold = gold - shopState.spentGold
   const character = calculateLevel(totalExp)
 
   return (
@@ -360,7 +395,7 @@ function Dashboard({ userId }: DashboardProps) {
             />
           </div>
 
-          <p className="gold">🪙 보유 골드: {gold} G</p>
+          <p className="gold">🪙 보유 골드: {shopLoading ? '불러오는 중...' : `${availableGold} G`}</p>
 
           <p className="character-info">
             퀘스트를 완료하면 경험치, 골드와 능력치를 얻습니다.
@@ -557,6 +592,7 @@ function Dashboard({ userId }: DashboardProps) {
             </div>
           )}
         </section>
+        <ShopPanel userId={userId} earnedGold={gold} />
       </main>
     </div>
   )

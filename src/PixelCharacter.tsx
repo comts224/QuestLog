@@ -3,9 +3,9 @@ import './PixelCharacter.css'
 // 각 장비는 32x32 픽셀 좌표계에 별도 레이어로 그립니다.
 // 이후 상점과 인벤토리의 장착 상태를 이 props에 연결할 예정입니다.
 export type CharacterEquipment = {
-  hat?: 'none' | 'wizard'
-  outfit?: 'basic' | 'cape'
-  accessory?: 'none' | 'star'
+  hat?: 'none' | 'wizard' | 'crown'
+  outfit?: 'basic' | 'cape' | 'forest'
+  accessory?: 'none' | 'star' | 'moon'
 }
 
 type PixelCharacterProps = {
@@ -49,6 +49,14 @@ export default function PixelCharacter({ equipment = {} }: PixelCharacterProps) 
             <rect x="10" y="18" width="12" height="2" fill="#db83ac" />
           </g>
         )}
+        {outfit === 'forest' && (
+          <g>
+            <rect x="7" y="18" width="3" height="10" fill="#34794c" />
+            <rect x="22" y="18" width="3" height="10" fill="#34794c" />
+            <rect x="10" y="18" width="12" height="3" fill="#69aa64" />
+            <rect x="15" y="18" width="3" height="3" fill="#d9ce76" />
+          </g>
+        )}
         {/* 모자 레이어 */}
         {hat === 'wizard' && (
           <g>
@@ -59,12 +67,29 @@ export default function PixelCharacter({ equipment = {} }: PixelCharacterProps) 
             <rect x="15" y="5" width="3" height="2" fill="#f5d269" />
           </g>
         )}
+        {hat === 'crown' && (
+          <g>
+            <rect x="9" y="5" width="14" height="5" fill="#e7b83c" />
+            <rect x="9" y="2" width="3" height="4" fill="#f7d665" />
+            <rect x="15" y="1" width="3" height="5" fill="#f7d665" />
+            <rect x="20" y="2" width="3" height="4" fill="#f7d665" />
+            <rect x="15" y="7" width="3" height="2" fill="#bf4886" />
+          </g>
+        )}
         {/* 액세서리 레이어 */}
         {accessory === 'star' && (
           <g fill="#ffe582">
             <rect x="25" y="13" width="2" height="7" />
             <rect x="22" y="15" width="8" height="2" />
             <rect x="24" y="14" width="4" height="5" fill="#f5c44e" />
+          </g>
+        )}
+        {accessory === 'moon' && (
+          <g>
+            <rect x="26" y="12" width="3" height="2" fill="#8cbbff" />
+            <rect x="24" y="14" width="3" height="6" fill="#8cbbff" />
+            <rect x="26" y="18" width="4" height="2" fill="#8cbbff" />
+            <rect x="28" y="14" width="2" height="4" fill="#8cbbff" />
           </g>
         )}
       </svg>
