@@ -1,0 +1,19 @@
+.appearance-customizer {
+  width: min(100%, 340px);
+  box-sizing: border-box;
+  border: 1px solid rgba(169, 150, 222, .45);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(114, 89, 170, .10);
+  color: inherit;
+}
+.appearance-customizer h3 { margin: 0 0 5px; font-size: 1rem; }
+.appearance-hint { font-size: .83rem; margin: 0 0 12px; opacity: .9; }
+.appearance-group { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
+.appearance-label { font-size: .9rem; font-weight: 700; }
+.appearance-swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 0; }
+.appearance-swatch { width: 36px; height: 36px; border-radius: 9px; border: 2px solid #635c76; cursor: pointer; box-shadow: 0 1px 3px #0002; }
+.appearance-swatch.selected { outline: 3px solid #7c4ddb; outline-offset: 2px; }
+.appearance-swatch:focus-visible { outline: 3px solid #2445a5; outline-offset: 3px; }
+.appearance-swatch:disabled { opacity: .55; cursor: wait; }
+.appearance-selected { font-size: .8rem; opacity: .85; }

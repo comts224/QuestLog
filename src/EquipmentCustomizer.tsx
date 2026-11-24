@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { doc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase'
 import PixelCharacter, { type CharacterEquipment } from './PixelCharacter'
+import AppearanceCustomizer from './AppearanceCustomizer'
+import { DEFAULT_APPEARANCE, type CharacterAppearance } from './appearance/palette'
 import './EquipmentCustomizer.css'
 import { FREE_EQUIPMENT, SHOP_ITEMS, isOwnedEquipment } from './shop/catalog'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
@@ -59,6 +61,7 @@ function normalizeEquipment(raw: Record<string, unknown> | undefined): Required<
  */
 export default function EquipmentCustomizer({ userId }: { userId: string }) {
   const [equipment, setEquipment] = useState<Required<CharacterEquipment>>(DEFAULT_EQUIPMENT)
+  const [appearance, setAppearance] = useState<CharacterAppearance>(DEFAULT_APPEARANCE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -131,8 +134,10 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
   return (
     <div className="equipment-customizer">
       <div className="character-image">
-        <PixelCharacter equipment={equipment} />
+        <PixelCharacter equipment={equipment} appearance={appearance} />
       </div>
+
+      <AppearanceCustomizer userId={userId} onAppearanceChange={setAppearance} />
 
       <div className="equipment-controls">
         <h3>장비 장착</h3>
