@@ -15,6 +15,7 @@ import ShopPanel from './ShopPanel'
 import DiaryPanel, { readDiaries, type SavedDiary } from './DiaryPanel'
 import RetryQuests from './RetryQuests'
 import PageNavigation, { getPageFromHash, type QuestLogPage } from './PageNavigation'
+import JobOnboarding from './JobOnboarding'
 import './PageNavigation.css'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
@@ -417,6 +418,8 @@ function Dashboard({ userId }: DashboardProps) {
         <h1>QuestLog</h1>
         <p>오늘의 할 일을 완료하고 모험가를 성장시키세요.</p>
       </header>
+
+      <JobOnboarding userId={userId} />
 
       <PageNavigation activePage={activePage} />
 

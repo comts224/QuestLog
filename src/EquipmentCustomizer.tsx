@@ -137,7 +137,12 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
         <PixelCharacter equipment={equipment} appearance={appearance} />
       </div>
 
-      <AppearanceCustomizer userId={userId} onAppearanceChange={setAppearance} />
+      <details className="appearance-disclosure">
+        <summary>🎨 피부색·머리색 변경</summary>
+        <div className="appearance-disclosure-content">
+          <AppearanceCustomizer userId={userId} onAppearanceChange={setAppearance} />
+        </div>
+      </details>
 
       <div className="equipment-controls">
         <h3>장비 장착</h3>
