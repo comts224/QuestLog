@@ -1,0 +1,13 @@
+.job-change-panel {margin-top: 22px; padding: 18px; border: 1px solid rgba(160,140,210,.5); border-radius: 16px; background: rgba(130,110,180,.09); color: inherit;}
+.job-change-head {display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 10px;}
+.job-change-head h3 {margin: 0 0 5px; font-size: 1.08rem;}
+.job-change-head p, .job-change-help, .job-change-note {font-size: .88rem; line-height: 1.5; margin: 6px 0;}
+.job-change-actions {display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0;}
+.job-change-panel button {padding: 10px 14px; border-radius: 9px; cursor: pointer;}
+.job-change-panel button:disabled {cursor: not-allowed; opacity: .55;}
+.job-change-options {display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid rgba(160,140,210,.45); border-radius: 12px;}
+.job-change-options select {width: 100%; max-width: 320px; padding: 10px; border-radius: 9px;}
+.job-change-options p {font-size: .85rem; margin: 0;}
+.job-change-success {color: #207348; font-weight: 700;}
+.job-change-error {color: #c32d4b; font-weight: 700;}
+.job-change-note {opacity: .85;}

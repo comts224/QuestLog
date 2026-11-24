@@ -7,6 +7,7 @@ import { calculateReward, type Difficulty } from './strategies/rewardStrategy'
 import { SHOP_ITEMS, type PaidItemId } from './shop/catalog'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import './ShopPanel.css'
+import JobChangePanel from './JobChangePanel'
 
 type Props = { userId: string; earnedGold: number }
 
@@ -103,6 +104,7 @@ export default function ShopPanel({ userId, earnedGold }: Props) {
           )
         })}
       </div>
+      <JobChangePanel userId={userId} earnedGold={earnedGold} />
       <p className="shop-message">🎒 인벤토리: {shop.ownedItemIds.length} / {SHOP_ITEMS.length}개 구매</p>
       {error && <p className="shop-error" role="alert">{error}</p>}
     </section>

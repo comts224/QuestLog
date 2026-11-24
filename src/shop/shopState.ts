@@ -1,8 +1,8 @@
 import type { DocumentData } from 'firebase/firestore'
 import { SHOP_ITEMS, type PaidItemId } from './catalog'
 
-export type ShopState = { ownedItemIds: PaidItemId[]; spentGold: number }
-export const EMPTY_SHOP: ShopState = { ownedItemIds: [], spentGold: 0 }
+export type ShopState = { ownedItemIds: PaidItemId[]; spentGold: number; jobChangeTickets: number }
+export const EMPTY_SHOP: ShopState = { ownedItemIds: [], spentGold: 0, jobChangeTickets: 0 }
 
 /** Firestore 데이터는 외부 입력이므로 화면에서 사용할 필드만 정규화합니다. */
 export function parseShop(data: DocumentData | undefined): ShopState {
@@ -13,5 +13,6 @@ export function parseShop(data: DocumentData | undefined): ShopState {
   return {
     ownedItemIds,
     spentGold: typeof spent === 'number' && Number.isSafeInteger(spent) && spent >= 0 ? spent : 0,
+    jobChangeTickets: typeof data?.jobChangeTickets === 'number' && Number.isSafeInteger(data.jobChangeTickets) && data.jobChangeTickets >= 0 ? data.jobChangeTickets : 0,
   }
 }
