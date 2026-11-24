@@ -1,0 +1,63 @@
+/* 11단계: 네 가지 메뉴로 화면을 분리합니다. 기존 App.css는 수정하지 않습니다. */
+.questlog-navigation {
+  width: min(1080px, calc(100% - 32px));
+  margin: 0 auto 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.questlog-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 12px;
+  border: 1px solid #d6caed;
+  border-radius: 16px;
+  background: #f8f5ff;
+  color: #362453;
+  text-decoration: none;
+  transition: background-color .15s, border-color .15s, transform .15s;
+}
+.questlog-nav-link:hover { background: #eee6ff; border-color: #9776d1; transform: translateY(-1px); }
+.questlog-nav-link:focus-visible { outline: 3px solid #7e57c2; outline-offset: 2px; }
+.questlog-nav-link.is-active { background: #59408e; border-color: #59408e; color: #fff; box-shadow: 0 6px 16px rgba(55, 37, 96, .18); }
+.questlog-nav-icon { font-size: 1.65rem; line-height: 1; flex: 0 0 auto; }
+.questlog-nav-text { display: grid; gap: 3px; min-width: 0; }
+.questlog-nav-label { font-size: .98rem; font-weight: 800; }
+.questlog-nav-subtitle { font-size: .72rem; opacity: .85; }
+
+/* 기존 2열 대시보드 레이아웃을 페이지당 1열로 전환 */
+.dashboard.questlog-dashboard {
+  display: block;
+  width: min(1080px, calc(100% - 32px));
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.questlog-page { min-width: 0; }
+.questlog-page > .panel,
+.questlog-page > .retry-panel { width: 100%; box-sizing: border-box; margin: 0 0 18px; }
+.questlog-page .character-panel { max-width: 100%; }
+
+/* 과거에 지적된 일기장·다시 도전의 낮은 글자 대비 개선 */
+.questlog-page .diary-note,
+.questlog-page .retry-description { color: #42325b; }
+.questlog-page .retry-item-info span { color: #eee5ff; }
+.questlog-page .diary-page { background: #302047; border-color: #8c73b4; color: #f9f4ff; }
+.questlog-page .diary-page h3,
+.questlog-page .diary-story,
+.questlog-page .diary-page li { color: #f9f4ff; }
+.questlog-page .retry-item { background: #302047; border-color: #8c73b4; }
+.questlog-page .retry-item-info strong { color: #fff; }
+.questlog-page .retry-status { color: #ffe2a5; }
+
+@media (max-width: 750px) {
+  .questlog-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .questlog-nav-link { padding: 13px 8px; }
+  .questlog-nav-icon { font-size: 1.3rem; }
+  .questlog-nav-subtitle { display: none; }
+}
+@media (max-width: 380px) {
+  .questlog-nav-label { font-size: .82rem; }
+}

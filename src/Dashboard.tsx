@@ -14,6 +14,8 @@ import EquipmentCustomizer from './EquipmentCustomizer'
 import ShopPanel from './ShopPanel'
 import DiaryPanel, { readDiaries, type SavedDiary } from './DiaryPanel'
 import RetryQuests from './RetryQuests'
+import PageNavigation, { getPageFromHash, type QuestLogPage } from './PageNavigation'
+import './PageNavigation.css'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
   calculateReward,
@@ -92,6 +94,14 @@ function Dashboard({ userId }: DashboardProps) {
   const [diaries, setDiaries] = useState<SavedDiary[]>([])
   const [diariesLoading, setDiariesLoading] = useState(true)
   const [todayKey, setTodayKey] = useState(getTodayKey())
+  const [activePage, setActivePage] = useState<QuestLogPage>(getPageFromHash)
+
+  // 주소의 #character/#quests/#shop/#diary와 메뉴 상태를 동기화합니다.
+  useEffect(() => {
+    const syncPage = () => setActivePage(getPageFromHash())
+    window.addEventListener('hashchange', syncPage)
+    return () => window.removeEventListener('hashchange', syncPage)
+  }, [])
 
   // Firebase에서 로그인한 사용자의 퀘스트 가져오기
   useEffect(() => {
@@ -408,7 +418,10 @@ function Dashboard({ userId }: DashboardProps) {
         <p>오늘의 할 일을 완료하고 모험가를 성장시키세요.</p>
       </header>
 
-      <main className="dashboard">
+      <PageNavigation activePage={activePage} />
+
+      <main className="dashboard questlog-dashboard">
+        <div className="questlog-page" style={{ display: activePage === 'character' ? 'block' : 'none' }}>
         {/* 캐릭터 정보 */}
         <section className="panel character-panel">
           <h2>나의 모험가</h2>
@@ -450,6 +463,9 @@ function Dashboard({ userId }: DashboardProps) {
           </div>
         </section>
 
+        </div>
+
+        <div className="questlog-page" style={{ display: activePage === 'quests' ? 'block' : 'none' }}>
         {/* 퀘스트 관리 */}
         <section className="panel quest-panel">
           <div className="quest-heading">
@@ -636,9 +652,16 @@ function Dashboard({ userId }: DashboardProps) {
         <RetryQuests userId={userId} diaries={diaries} todayKey={todayKey}
           todayClosed={todayClosed} loading={loading || diariesLoading}
           todayQuestIds={todayQuests.map((quest) => quest.id)} />
-        <ShopPanel userId={userId} earnedGold={gold} />
-        <DiaryPanel userId={userId} quests={quests} diaries={diaries}
-          todayKey={todayKey} questsLoading={loading} diariesLoading={diariesLoading} />
+        </div>
+
+        <div className="questlog-page" style={{ display: activePage === 'shop' ? 'block' : 'none' }}>
+          <ShopPanel userId={userId} earnedGold={gold} />
+        </div>
+        {/* 항상 마운트해 두어, 다른 페이지에서도 지난 날짜 자동 마감이 작동합니다. */}
+        <div className="questlog-page" style={{ display: activePage === 'diary' ? 'block' : 'none' }}>
+          <DiaryPanel userId={userId} quests={quests} diaries={diaries}
+            todayKey={todayKey} questsLoading={loading} diariesLoading={diariesLoading} />
+        </div>
       </main>
     </div>
   )
