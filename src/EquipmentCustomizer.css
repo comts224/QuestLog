@@ -51,32 +51,4 @@
 .equipment-row select:disabled { opacity: .6; }
 .equipment-error { color: #c32d4b; font-size: .85rem; margin: 10px 0 0; }
 
-/* 피부색·머리색 선택은 필요할 때만 펼쳐서 사용합니다. */
-.appearance-disclosure {
-  box-sizing: border-box;
-  width: min(100%, 340px);
-}
-
-.appearance-disclosure > summary {
-  display: block;
-  cursor: pointer;
-  text-align: center;
-  background: rgba(114, 89, 170, .16);
-  border: 1px solid rgba(169, 150, 222, .55);
-  border-radius: 12px;
-  padding: 11px 16px;
-  font-size: .92rem;
-  font-weight: 700;
-  list-style: none;
-  user-select: none;
-}
-
-.appearance-disclosure > summary::-webkit-details-marker { display: none; }
-.appearance-disclosure > summary::after { content: ' ＋'; }
-.appearance-disclosure[open] > summary::after { content: ' －'; }
-.appearance-disclosure > summary:focus-visible {
-  outline: 3px solid #7c4ddb;
-  outline-offset: 2px;
-}
-.appearance-disclosure-content { padding-top: 10px; }
-.appearance-disclosure-content .appearance-customizer { width: 100%; }
+.equipment-controls .equipment-hint { line-height: 1.5; }

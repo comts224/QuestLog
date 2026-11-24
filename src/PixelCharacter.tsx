@@ -4,9 +4,9 @@ import { DEFAULT_APPEARANCE, hairHex, skinHex, type CharacterAppearance } from '
 // 각 장비는 32x32 픽셀 좌표계에 별도 레이어로 그립니다.
 // 이후 상점과 인벤토리의 장착 상태를 이 props에 연결할 예정입니다.
 export type CharacterEquipment = {
-  hat?: 'none' | 'wizard' | 'crown'
-  outfit?: 'basic' | 'cape' | 'forest'
-  accessory?: 'none' | 'star' | 'moon'
+  hat?: 'none' | 'wizard' | 'crown' | 'straw' | 'helmet' | 'hood'
+  outfit?: 'basic' | 'cape' | 'forest' | 'overalls' | 'mageRobe' | 'armor' | 'doctorCoat' | 'clericRobe'
+  accessory?: 'none' | 'star' | 'moon' | 'medicalBag' | 'holySymbol'
 }
 
 type PixelCharacterProps = {
@@ -61,6 +61,12 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
             <rect x="15" y="18" width="3" height="3" fill="#d9ce76" />
           </g>
         )}
+        {/* 직업별 의상 레이어 */}
+        {outfit === 'overalls' && <g><rect x="9" y="18" width="14" height="8" fill="#688b51"/><rect x="11" y="18" width="3" height="7" fill="#cf9a49"/><rect x="18" y="18" width="3" height="7" fill="#cf9a49"/><rect x="14" y="23" width="4" height="2" fill="#ebd083"/></g>}
+        {outfit === 'mageRobe' && <g><rect x="9" y="18" width="14" height="10" fill="#6858ab"/><rect x="7" y="18" width="3" height="9" fill="#8f74c4"/><rect x="22" y="18" width="3" height="9" fill="#8f74c4"/><rect x="15" y="19" width="2" height="7" fill="#e8ce72"/></g>}
+        {outfit === 'armor' && <g><rect x="9" y="17" width="14" height="10" fill="#a4b6c9"/><rect x="7" y="18" width="4" height="5" fill="#c2d2df"/><rect x="21" y="18" width="4" height="5" fill="#c2d2df"/><rect x="14" y="19" width="4" height="5" fill="#647d9c"/></g>}
+        {outfit === 'doctorCoat' && <g><rect x="8" y="18" width="16" height="10" fill="#f1f6f8"/><rect x="13" y="18" width="6" height="9" fill="#7eb9c5"/><rect x="15" y="19" width="2" height="8" fill="#f9fcff"/><rect x="9" y="24" width="3" height="2" fill="#a3b8c7"/><rect x="20" y="24" width="3" height="2" fill="#a3b8c7"/></g>}
+        {outfit === 'clericRobe' && <g><rect x="8" y="18" width="16" height="11" fill="#faf0d7"/><rect x="13" y="18" width="6" height="10" fill="#d6b864"/><rect x="15" y="20" width="2" height="7" fill="#fff9ec"/></g>}
         {/* 모자 레이어 */}
         {hat === 'wizard' && (
           <g>
@@ -80,7 +86,13 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
             <rect x="15" y="7" width="3" height="2" fill="#bf4886" />
           </g>
         )}
+        {/* 직업별 모자 레이어 */}
+        {hat === 'straw' && <g><rect x="9" y="5" width="14" height="5" fill="#dcb764"/><rect x="5" y="9" width="22" height="2" fill="#bf9142"/><rect x="9" y="7" width="14" height="2" fill="#735632"/></g>}
+        {hat === 'helmet' && <g><rect x="8" y="5" width="16" height="8" fill="#aebfd0"/><rect x="14" y="3" width="4" height="5" fill="#d7e2e8"/><rect x="8" y="12" width="3" height="4" fill="#768aa0"/><rect x="21" y="12" width="3" height="4" fill="#768aa0"/></g>}
+        {hat === 'hood' && <g><rect x="10" y="3" width="12" height="3" fill="#f8eacc"/><rect x="8" y="6" width="16" height="5" fill="#f8eacc"/><rect x="7" y="10" width="3" height="7" fill="#e1c482"/><rect x="22" y="10" width="3" height="7" fill="#e1c482"/></g>}
         {/* 액세서리 레이어 */}
+        {accessory === 'medicalBag' && <g><rect x="24" y="21" width="7" height="6" fill="#93665a"/><rect x="26" y="19" width="3" height="3" fill="#cba99b"/><rect x="27" y="22" width="2" height="4" fill="#fff3ef"/><rect x="25" y="23" width="5" height="2" fill="#fff3ef"/></g>}
+        {accessory === 'holySymbol' && <g><rect x="26" y="15" width="2" height="9" fill="#f2d071"/><rect x="23" y="18" width="8" height="2" fill="#f2d071"/></g>}
         {accessory === 'star' && (
           <g fill="#ffe582">
             <rect x="25" y="13" width="2" height="7" />

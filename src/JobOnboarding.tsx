@@ -3,20 +3,9 @@ import { doc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/fires
 import { db } from './firebase'
 import './JobOnboarding.css'
 
-// 직업 변경권을 구현할 때에도 동일한 ID를 재사용합니다.
-export const JOB_OPTIONS = [
-  { id: 'farmer', name: '농부', emoji: '🌾', description: '밭을 가꾸며 하루하루 꾸준히 성장하는 모험가', starter: '밀짚모자 · 작업복' },
-  { id: 'mage', name: '마법사', emoji: '🧙', description: '지식과 마법을 탐구하는 모험가', starter: '마법사 모자 · 로브' },
-  { id: 'knight', name: '기사', emoji: '⚔️', description: '단련과 용기로 길을 개척하는 모험가', starter: '투구 · 갑옷' },
-  { id: 'doctor', name: '의사', emoji: '🩺', description: '생명과 회복의 가치를 지키는 모험가', starter: '의사 가운 · 의료가방' },
-  { id: 'cleric', name: '성직자', emoji: '✨', description: '희망과 치유의 빛을 전하는 모험가', starter: '성직자 로브 · 성표' },
-] as const
+import { JOBS, STARTER_GEAR, parseJobId, type JobId } from './jobs/starterEquipment'
 
-export type JobId = (typeof JOB_OPTIONS)[number]['id']
-
-function isJobId(value: unknown): value is JobId {
-  return JOB_OPTIONS.some((job) => job.id === value)
-}
+const JOB_OPTIONS = JOBS.map(job => ({ ...job, description: `${job.name}의 길을 선택합니다.` }))
 
 /**
  * 최초 직업 선택 전용 창.
@@ -40,7 +29,7 @@ export default function JobOnboarding({ userId }: { userId: string }) {
       doc(db, 'users', userId, 'profile', 'job'),
       (snapshot) => {
         const value = snapshot.data()?.jobId
-        setCurrentJob(isJobId(value) ? value : null)
+        setCurrentJob(parseJobId(value))
         setLoading(false)
       },
       () => {
@@ -57,12 +46,22 @@ export default function JobOnboarding({ userId }: { userId: string }) {
 
     try {
       const ref = doc(db, 'users', userId, 'profile', 'job')
+      const equipmentRef = doc(db, 'users', userId, 'equipment', 'current')
       await runTransaction(db, async (transaction) => {
         const snapshot = await transaction.get(ref)
+        await transaction.get(equipmentRef)
         // 다른 탭에서 먼저 선택했더라도 최초 직업을 덮어쓰지 않습니다.
         if (snapshot.exists()) {
           throw new Error('JOB_ALREADY_CHOSEN')
         }
+        // 최초 직업을 선택할 때 기본 장비도 함께 지급합니다.
+        // 기존 구매 내역(shop/state)은 절대 변경하지 않습니다.
+        const starter = STARTER_GEAR[selectedJob]
+        transaction.set(equipmentRef, {
+          ...starter,
+          starterJobId: selectedJob,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
         transaction.set(ref, {
           jobId: selectedJob,
           selectedAt: serverTimestamp(),
@@ -110,7 +109,7 @@ export default function JobOnboarding({ userId }: { userId: string }) {
               <span className="job-onboarding-emoji" aria-hidden="true">{job.emoji}</span>
               <strong>{job.name}</strong>
               <span className="job-onboarding-flavor">{job.description}</span>
-              <span className="job-onboarding-starter">기본 장비 예정: {job.starter}</span>
+              <span className="job-onboarding-starter">기본 장비: {job.starter}</span>
             </label>
           ))}
         </div>
@@ -119,7 +118,7 @@ export default function JobOnboarding({ userId }: { userId: string }) {
         <button className="job-onboarding-confirm" type="button" onClick={chooseJob} disabled={saving || Boolean(error && error.includes('불러오지'))}>
           {saving ? '저장하는 중...' : `${JOB_OPTIONS.find((job) => job.id === selectedJob)?.name}로 모험 시작하기`}
         </button>
-        <p className="job-onboarding-footnote">선택한 직업은 Firebase에 저장됩니다. 직업별 장비와 변경권은 다음 개발 단계에서 추가합니다.</p>
+        <p className="job-onboarding-footnote">선택한 직업은 Firebase에 저장됩니다. 기본 장비가 함께 지급됩니다. 직업 변경권은 다음 개발 단계에서 추가됩니다.</p>
       </section>
     </div>
   )
