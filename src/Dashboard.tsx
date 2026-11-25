@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { DailyQuestCreator } from './factories/questFactory'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
@@ -205,15 +206,12 @@ function Dashboard({ userId }: DashboardProps) {
         if (diary.exists()) throw new Error('DAY_CLOSED')
         const count = currentCount(counter, initialCount)
         if (count >= MAX_DAILY_QUESTS) throw new Error(DAILY_LIMIT_ERROR)
-        transaction.set(questRef, {
+        transaction.set(questRef, new DailyQuestCreator().create({
           title: trimmedTitle,
           difficulty,
           category,
-          completed: false,
           dateKey: todayKey,
-          createdAt: serverTimestamp(),
-          completedAt: null,
-        })
+        }))
         updateDailyCount(transaction, userId, todayKey, count + 1)
       })
 

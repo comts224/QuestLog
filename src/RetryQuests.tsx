@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, runTransaction } from 'firebase/firestore'
 import { db } from './firebase'
+import { RetryQuestCreator } from './factories/questFactory'
 import type { SavedDiary } from './DiaryPanel'
 import './RetryQuests.css'
 import { MAX_DAILY_QUESTS, DAILY_LIMIT_ERROR, countExistingQuests, currentCount, dailyCountRef, updateDailyCount } from './dailyQuestLimit'
@@ -81,16 +82,14 @@ export default function RetryQuests({ userId, diaries, todayKey, todayClosed, lo
           : undefined
         if (!item || item.completed !== false) throw new Error('SOURCE_CHANGED')
 
-        tx.set(newQuestRef, {
+        tx.set(newQuestRef, new RetryQuestCreator().create({
           title: candidate.title,
           category: candidate.category,
           difficulty: candidate.difficulty,
-          completed: false,
-          completedAt: null,
           dateKey: todayKey,
-          createdAt: serverTimestamp(),
-          retrySource: { dateKey: candidate.dateKey, questId: candidate.sourceId },
-        })
+          sourceDateKey: candidate.dateKey,
+          sourceQuestId: candidate.sourceId,
+        }))
         updateDailyCount(tx, userId, todayKey, count + 1)
       })
       setMessage(`「${candidate.title}」 퀘스트를 오늘 다시 등록했습니다.`)
