@@ -183,14 +183,16 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
     <div className="equipment-customizer">
       <div className="character-image">
         <PixelCharacter equipment={equipment} appearance={appearance} action={action?.job ?? null} actionKey={action?.key ?? 0} />
-      </div>
-
-      <div className="equipment-action-preview">
-        <button type="button" className="equipment-action-button" disabled={!job || loading || jobLoading || saving}
-          onClick={() => { if (job) showAction(job) }}>
-          ▶ {job ? JOBS.find(item => item.id === job)?.name : '직업'} 동작 보기
+        <button
+          type="button"
+          className="equipment-action-button"
+          aria-label={`${JOBS.find(item => item.id === job)?.name ?? '캐릭터'} 동작 재생`}
+          title="캐릭터 동작 재생"
+          disabled={!job || loading || jobLoading || saving}
+          onClick={() => { if (job) showAction(job) }}
+        >
+          ▶
         </button>
-        <p className="equipment-hint">장비를 착용하면 직업별 동작이 재생됩니다. 버튼으로도 미리 볼 수 있어요.</p>
       </div>
 
       <AppearanceCustomizer userId={userId} onAppearanceChange={setAppearance} />

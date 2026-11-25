@@ -1,6 +1,47 @@
-.equipment-action-preview { text-align: center; width: min(100%, 340px); }
-.equipment-action-button { border: 1px solid #9f8bd4; background: #eee8fb; color: #30244f; padding: 9px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
-.equipment-action-button:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); box-shadow: 0 5px 12px #4b338a33; background: #e2d7fc; }
-.equipment-action-button:disabled { opacity: .5; cursor: not-allowed; }
-.equipment-action-preview .equipment-hint { margin: 8px 0 0; }
-@media (prefers-reduced-motion: reduce) { .equipment-action-button { transition: none; } }
+/* 캐릭터 이미지 내부의 작고 눈에 띄는 동작 재생 버튼 */
+.equipment-customizer .character-image {
+  position: relative;
+}
+
+.equipment-action-button {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0 0 0 2px;
+  border: 1px solid #9f8bd4;
+  border-radius: 10px;
+  background: #eee8fb;
+  color: #30244f;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px #4b338a1f;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.equipment-action-button:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 12px #4b338a33;
+  background: #e2d7fc;
+}
+
+.equipment-action-button:focus-visible {
+  outline: 3px solid #8b6de8;
+  outline-offset: 2px;
+}
+
+.equipment-action-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .equipment-action-button { transition: none; }
+  .equipment-action-button:hover:not(:disabled) { transform: none; }
+}
