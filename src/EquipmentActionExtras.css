@@ -1,0 +1,6 @@
+.equipment-action-preview { text-align: center; width: min(100%, 340px); }
+.equipment-action-button { border: 1px solid #9f8bd4; background: #eee8fb; color: #30244f; padding: 9px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+.equipment-action-button:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); box-shadow: 0 5px 12px #4b338a33; background: #e2d7fc; }
+.equipment-action-button:disabled { opacity: .5; cursor: not-allowed; }
+.equipment-action-preview .equipment-hint { margin: 8px 0 0; }
+@media (prefers-reduced-motion: reduce) { .equipment-action-button { transition: none; } }

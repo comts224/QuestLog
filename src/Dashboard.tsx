@@ -18,6 +18,7 @@ import PageNavigation, { getPageFromHash, type QuestLogPage } from './PageNaviga
 import JobOnboarding from './JobOnboarding'
 import { MAX_DAILY_QUESTS, DAILY_LIMIT_ERROR, countExistingQuests, currentCount, dailyCountRef, updateDailyCount } from './dailyQuestLimit'
 import './PageNavigation.css'
+import './QuestLogMotion.css'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
   calculateReward,
@@ -91,6 +92,8 @@ function Dashboard({ userId }: DashboardProps) {
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  // 완료 보상은 Firestore 저장 성공 후에만 잠깐 표시합니다.
+  const [rewardPopup, setRewardPopup] = useState<{ id: string; exp: number; gold: number; sequence: number } | null>(null)
   const [shopState, setShopState] = useState(EMPTY_SHOP)
   const [shopLoading, setShopLoading] = useState(true)
   const [diaries, setDiaries] = useState<SavedDiary[]>([])
@@ -245,12 +248,21 @@ function Dashboard({ userId }: DashboardProps) {
         if (!current.exists() || current.data().completed) throw new Error('QUEST_CHANGED')
         transaction.update(questRef, { completed: true, completedAt: serverTimestamp() })
       })
+      const reward = calculateReward(quest.difficulty)
+      setRewardPopup((previous) => ({ id: quest.id, exp: reward.exp, gold: reward.gold, sequence: (previous?.sequence ?? 0) + 1 }))
     } catch {
       setError('퀘스트 완료 처리에 실패했습니다.')
     } finally {
       setBusyId(null)
     }
   }
+
+  // 다음 퀘스트에도 재생되도록 완료 알림을 일정 시간 후 닫습니다.
+  useEffect(() => {
+    if (!rewardPopup) return
+    const timer = window.setTimeout(() => setRewardPopup(null), 1400)
+    return () => window.clearTimeout(timer)
+  }, [rewardPopup])
 
   // 완료 취소 시 잔액이 음수가 되지 않도록 구매 기록과 함께 트랜잭션으로 확인합니다.
   async function cancelCompletion(quest: Quest) {
@@ -562,7 +574,12 @@ function Dashboard({ userId }: DashboardProps) {
                 const isBusy = busyId !== null || diariesLoading || closedDates.has(quest.dateKey)
 
                 return (
-                  <div className="quest-item" key={quest.id}>
+                  <div className="quest-item ql-animated-quest" key={quest.id}>
+                    {rewardPopup?.id === quest.id && (
+                      <div key={rewardPopup.sequence} className="ql-reward-pop" role="status" aria-live="polite">
+                        ✨ EXP +{rewardPopup.exp} · 🪙 +{rewardPopup.gold} G
+                      </div>
+                    )}
                     {isEditing ? (
                       // 퀘스트 수정 화면
                       <form

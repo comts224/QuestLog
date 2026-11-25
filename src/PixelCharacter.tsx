@@ -1,4 +1,6 @@
 import './PixelCharacter.css'
+import EquipmentAction from './EquipmentAction'
+import type { JobId } from './jobs/starterEquipment'
 import { DEFAULT_APPEARANCE, hairHex, skinHex, type CharacterAppearance } from './appearance/palette'
 
 // 각 장비는 32x32 픽셀 좌표계에 별도 레이어로 그립니다.
@@ -12,9 +14,11 @@ export type CharacterEquipment = {
 type PixelCharacterProps = {
   equipment?: CharacterEquipment
   appearance?: CharacterAppearance
+  action?: JobId | null
+  actionKey?: number
 }
 
-export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_APPEARANCE }: PixelCharacterProps) {
+export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_APPEARANCE, action = null, actionKey = 0 }: PixelCharacterProps) {
   const skin = skinHex(appearance.skin)
   const hair = hairHex(appearance.hair)
   const { hat = 'none', outfit = 'basic', accessory = 'none' } = equipment
@@ -31,8 +35,6 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
         <rect x="17" y="28" width="8" height="2" fill="#25243e" />
         {/* 몸통과 팔 */}
         <rect x="9" y="17" width="14" height="9" fill="#5977bd" />
-        <rect x="6" y="18" width="3" height="7" fill={skin} />
-        <rect x="23" y="18" width="3" height="7" fill={skin} />
         <rect x="9" y="24" width="14" height="2" fill="#3e4f82" />
         <rect x="15" y="24" width="3" height="2" fill="#f2cc68" />
         {/* 머리카락, 얼굴 */}
@@ -41,8 +43,10 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
         <rect x="9" y="9" width="14" height="8" fill={skin} />
         <rect x="8" y="9" width="3" height="6" fill={hair} />
         <rect x="21" y="9" width="3" height="5" fill={hair} />
-        <rect x="12" y="12" width="2" height="2" fill="#342d4f" />
-        <rect x="19" y="12" width="2" height="2" fill="#342d4f" />
+        <g className="pixel-character__eyes">
+          <rect x="12" y="12" width="2" height="2" fill="#342d4f" />
+          <rect x="19" y="12" width="2" height="2" fill="#342d4f" />
+        </g>
         <rect x="15" y="15" width="3" height="1" fill="#ae6872" />
         <rect x="14" y="17" width="4" height="2" fill={skin} />
         {/* 의상 레이어 */}
@@ -124,6 +128,8 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
             <rect x="28" y="14" width="2" height="4" fill="#8cbbff" />
           </g>
         )}
+        {/* 원래 양팔을 이곳에서 그립니다. 특별 동작 때는 팔 자체가 이동합니다. */}
+        <EquipmentAction key={actionKey} job={action} skin={skin} />
       </svg>
     </div>
   )

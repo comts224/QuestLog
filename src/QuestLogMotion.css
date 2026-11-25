@@ -1,0 +1,82 @@
+/* QuestLog: 누르는 곳에만 절제된 RPG 반응을 추가합니다. */
+/* 별도의 컴포넌트 변경 없이 적용되는 인터랙션 규칙입니다. */
+.questlog-navigation .questlog-nav-link,
+.questlog-dashboard button,
+.questlog-dashboard .shop-item,
+.questlog-dashboard .quest-item,
+.questlog-dashboard .exp-fill {
+  transition: transform 180ms ease, box-shadow 180ms ease,
+              background-color 180ms ease, border-color 180ms ease,
+              width 380ms ease;
+}
+.questlog-navigation .questlog-nav-link:hover,
+.questlog-dashboard button:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.025);
+  box-shadow: 0 6px 16px rgba(53, 32, 101, .19);
+}
+.questlog-navigation .questlog-nav-link:active,
+.questlog-dashboard button:not(:disabled):active {
+  transform: translateY(0) scale(.98);
+}
+.questlog-dashboard button:focus-visible,
+.questlog-navigation .questlog-nav-link:focus-visible {
+  outline: 3px solid #b799f0;
+  outline-offset: 3px;
+}
+.questlog-dashboard .shop-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 9px 22px rgba(53, 32, 101, .15);
+  border-color: rgba(120, 86, 190, .8);
+}
+.questlog-dashboard .quest-item:hover {
+  box-shadow: 0 4px 14px rgba(53, 32, 101, .09);
+}
+/* 현재 페이지에만 진입 동작이 재실행됩니다. 숨긴 페이지는 마운트를 유지합니다. */
+.questlog-dashboard .questlog-page:not([style*="display: none"]) {
+  animation: ql-page-reveal 260ms ease-out both;
+}
+@keyframes ql-page-reveal {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ql-animated-quest { position: relative; }
+.ql-reward-pop {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, 0);
+  width: max-content;
+  max-width: 95%;
+  pointer-events: none;
+  padding: 7px 12px;
+  border: 1px solid #c9b0ef;
+  border-radius: 12px;
+  background: #fdf8ed;
+  color: #553b79;
+  font-weight: 800;
+  font-size: .9rem;
+  box-shadow: 0 5px 16px rgba(54, 40, 90, .16);
+  animation: ql-reward-rise 1350ms ease-out both;
+}
+@keyframes ql-reward-rise {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(.9); }
+  18% { opacity: 1; transform: translate(-50%, -9px) scale(1); }
+  70% { opacity: 1; transform: translate(-50%, -20px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -31px) scale(.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .questlog-navigation .questlog-nav-link,
+  .questlog-dashboard button,
+  .questlog-dashboard .shop-item,
+  .questlog-dashboard .quest-item,
+  .questlog-dashboard .exp-fill { transition: none !important; }
+  .questlog-navigation .questlog-nav-link:hover,
+  .questlog-dashboard button:not(:disabled):hover,
+  .questlog-dashboard .shop-item:hover,
+  .questlog-navigation .questlog-nav-link:active,
+  .questlog-dashboard button:not(:disabled):active { transform: none !important; }
+  .questlog-dashboard .questlog-page:not([style*="display: none"]),
+  .ql-reward-pop { animation: none !important; }
+  .ql-reward-pop { opacity: 1; transform: translate(-50%, -7px); }
+}

@@ -1,4 +1,4 @@
-/* SVG의 각 사각형이 픽셀처럼 선명하게 표시되도록 합니다. */
+/* 원본 32x32 픽셀 좌표계를 유지합니다. */
 .pixel-character {
   width: 128px;
   height: 128px;
@@ -8,7 +8,6 @@
   align-items: center;
   justify-content: center;
 }
-
 .pixel-character svg {
   display: block;
   width: 100%;
@@ -16,4 +15,94 @@
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   overflow: visible;
+  animation: ql-idle-breathe 2.8s ease-in-out infinite;
+}
+/* 평상시에는 아주 작게 숨 쉬고 가끔 눈을 깜빡입니다. */
+.pixel-character__eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ql-idle-blink 6.5s steps(1, end) infinite;
+}
+@keyframes ql-idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+@keyframes ql-idle-blink {
+  0%, 92%, 95%, 100% { transform: scaleY(1); }
+  93%, 94% { transform: scaleY(.1); }
+}
+
+.pixel-character .pixel-action { pointer-events: none; }
+/* 기본 자세: 팔은 각각 한 번만 렌더링합니다. */
+.pixel-action__left-arm,
+.pixel-action__right-arm { transform-box: view-box; }
+.pixel-action__left-arm { transform-origin: 8px 19px; }
+.pixel-action__right-arm { transform-origin: 24px 19px; }
+
+/* '동작 보기'/장착 성공 시 해당 원래 팔만 회전했다가 돌아옵니다. */
+.pixel-action--farmer .pixel-action__left-arm { animation: ql-arm-hat 1.15s ease-in-out both; }
+.pixel-action--mage .pixel-action__right-arm { animation: ql-arm-wand 1.15s ease-in-out both; }
+.pixel-action--knight .pixel-action__right-arm { animation: ql-arm-sword 1.15s ease-in-out both; }
+.pixel-action--doctor .pixel-action__right-arm { animation: ql-arm-doctor 1.15s ease-in-out both; }
+.pixel-action--cleric .pixel-action__left-arm { animation: ql-arm-pray-left 1.15s ease-in-out both; }
+.pixel-action--cleric .pixel-action__right-arm { animation: ql-arm-pray-right 1.15s ease-in-out both; }
+.pixel-action__held-item,
+.pixel-action__blessing,
+.pixel-action__magic { opacity: 0; }
+.pixel-action--mage .pixel-action__held-item,
+.pixel-action--knight .pixel-action__held-item,
+.pixel-action--doctor .pixel-action__held-item { animation: ql-held-visible 1.15s steps(1, end) both; }
+.pixel-action--cleric .pixel-action__blessing,
+.pixel-action--mage .pixel-action__magic { animation: ql-magic-visible 1.15s steps(1, end) both; }
+
+@keyframes ql-arm-hat {
+  0%, 100% { transform: rotate(0deg); }
+  27%, 70% { transform: rotate(166deg); }
+}
+@keyframes ql-arm-wand {
+  0%, 100% { transform: rotate(0deg); }
+  24%, 59% { transform: rotate(-105deg); }
+  44% { transform: rotate(-66deg); }
+  72% { transform: rotate(-95deg); }
+}
+@keyframes ql-arm-sword {
+  0%, 100% { transform: rotate(0deg); }
+  30%, 70% { transform: rotate(-155deg); }
+}
+@keyframes ql-arm-doctor {
+  0%, 100% { transform: rotate(0deg); }
+  30%, 70% { transform: rotate(-115deg); }
+}
+@keyframes ql-arm-pray-left {
+  0%, 100% { transform: rotate(0deg); }
+  30%, 70% { transform: rotate(-80deg); }
+}
+@keyframes ql-arm-pray-right {
+  0%, 100% { transform: rotate(0deg); }
+  30%, 70% { transform: rotate(80deg); }
+}
+@keyframes ql-held-visible {
+  0%, 14%, 96%, 100% { opacity: 0; }
+  15%, 95% { opacity: 1; }
+}
+@keyframes ql-magic-visible {
+  0%, 30%, 85%, 100% { opacity: 0; }
+  31%, 84% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixel-character svg,
+  .pixel-character__eyes,
+  .pixel-action__left-arm,
+  .pixel-action__right-arm,
+  .pixel-action__held-item,
+  .pixel-action__blessing,
+  .pixel-action__magic {
+    animation: none !important;
+    transform: none !important;
+    opacity: initial;
+  }
+  .pixel-action__held-item,
+  .pixel-action__blessing,
+  .pixel-action__magic { opacity: 0 !important; }
 }

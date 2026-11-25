@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase'
 import PixelCharacter, { type CharacterEquipment } from './PixelCharacter'
 import AppearanceCustomizer from './AppearanceCustomizer'
 import { DEFAULT_APPEARANCE, type CharacterAppearance } from './appearance/palette'
 import './EquipmentCustomizer.css'
+import './EquipmentActionExtras.css'
 import { FREE_EQUIPMENT, SHOP_ITEMS, isOwnedEquipment } from './shop/catalog'
 import { JOBS, JOB_GEAR_CHOICES, STARTER_GEAR, isJobStarter, parseJobId, type JobId } from './jobs/starterEquipment'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
@@ -61,6 +62,14 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
   const [jobLoading, setJobLoading] = useState(true)
   const [shop, setShop] = useState(EMPTY_SHOP)
   const [shopLoading, setShopLoading] = useState(true)
+  // 실제 장착 저장 성공 시 또는 '동작 보기' 클릭 시 1회 재생합니다.
+  const [action, setAction] = useState<{ job: JobId; key: number } | null>(null)
+  const actionSequence = useRef(0)
+
+  function showAction(jobId: JobId) {
+    actionSequence.current += 1
+    setAction({ job: jobId, key: actionSequence.current })
+  }
 
   useEffect(() => {
     setEquipment(DEFAULT_EQUIPMENT)
@@ -161,6 +170,8 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
         const nextEquipment = { ...currentEquipment, [slot]: value }
         transaction.set(equipmentRef, { ...nextEquipment, updatedAt: serverTimestamp() }, { merge: true })
       })
+      // 트랜잭션이 성공한 뒤에만 착용 동작을 실행합니다.
+      showAction(job)
     } catch {
       setError('장비 저장에 실패했습니다. 다시 선택해 주세요.')
     } finally {
@@ -171,7 +182,15 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
   return (
     <div className="equipment-customizer">
       <div className="character-image">
-        <PixelCharacter equipment={equipment} appearance={appearance} />
+        <PixelCharacter equipment={equipment} appearance={appearance} action={action?.job ?? null} actionKey={action?.key ?? 0} />
+      </div>
+
+      <div className="equipment-action-preview">
+        <button type="button" className="equipment-action-button" disabled={!job || loading || jobLoading || saving}
+          onClick={() => { if (job) showAction(job) }}>
+          ▶ {job ? JOBS.find(item => item.id === job)?.name : '직업'} 동작 보기
+        </button>
+        <p className="equipment-hint">장비를 착용하면 직업별 동작이 재생됩니다. 버튼으로도 미리 볼 수 있어요.</p>
       </div>
 
       <AppearanceCustomizer userId={userId} onAppearanceChange={setAppearance} />
