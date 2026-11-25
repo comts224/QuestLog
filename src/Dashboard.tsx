@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { DailyQuestCreator } from './factories/questFactory'
+import { canQuestAction, transitionQuest } from './quest/questState'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
@@ -231,7 +232,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 퀘스트 완료
   async function completeQuest(quest: Quest) {
-    if (quest.completed || busyId !== null || loading || diariesLoading || closedDates.has(quest.dateKey)) return
+    if (!canQuestAction({ completed: quest.completed, closed: closedDates.has(quest.dateKey) }, 'complete') || busyId !== null || loading || diariesLoading) return
 
     setBusyId(quest.id)
     setError('')
@@ -242,9 +243,9 @@ function Dashboard({ userId }: DashboardProps) {
       await runTransaction(db, async (transaction) => {
         const diary = await transaction.get(diaryRef)
         const current = await transaction.get(questRef)
-        if (diary.exists()) throw new Error('DAY_CLOSED')
-        if (!current.exists() || current.data().completed) throw new Error('QUEST_CHANGED')
-        transaction.update(questRef, { completed: true, completedAt: serverTimestamp() })
+        if (!current.exists()) throw new Error('QUEST_CHANGED')
+        const next = transitionQuest({ completed: current.data().completed === true, closed: diary.exists() }, 'complete')
+        transaction.update(questRef, { completed: next.status === 'completed', completedAt: serverTimestamp() })
       })
       const reward = calculateReward(quest.difficulty)
       setRewardPopup((previous) => ({ id: quest.id, exp: reward.exp, gold: reward.gold, sequence: (previous?.sequence ?? 0) + 1 }))
@@ -264,7 +265,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 완료 취소 시 잔액이 음수가 되지 않도록 구매 기록과 함께 트랜잭션으로 확인합니다.
   async function cancelCompletion(quest: Quest) {
-    if (!quest.completed || busyId !== null || loading || shopLoading || diariesLoading || closedDates.has(quest.dateKey)) return
+    if (!canQuestAction({ completed: quest.completed, closed: closedDates.has(quest.dateKey) }, 'cancel') || busyId !== null || loading || shopLoading || diariesLoading) return
 
     setBusyId(quest.id)
     setError('')
@@ -276,12 +277,12 @@ function Dashboard({ userId }: DashboardProps) {
       const questRefs = quests.map((item) => doc(db, 'users', userId, 'quests', item.id))
       await runTransaction(db, async (transaction) => {
         const diarySnap = await transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey))
-        if (diarySnap.exists()) throw new Error('DAY_CLOSED')
         const walletSnap = await transaction.get(walletRef)
         const currentShop = parseShop(walletSnap.data())
         const questDocs = await Promise.all(questRefs.map((ref) => transaction.get(ref)))
         const target = questDocs.find((item) => item.id === questRef.id)
-        if (!target?.exists() || !target.data().completed) throw new Error('QUEST_CHANGED')
+        if (!target?.exists()) throw new Error('QUEST_CHANGED')
+        const next = transitionQuest({ completed: target.data().completed === true, closed: diarySnap.exists() }, 'cancel')
         const earnedAfterCancel = questDocs.reduce((sum, item) => {
           if (!item.exists() || item.id === questRef.id) return sum
           const data = item.data()
@@ -289,7 +290,7 @@ function Dashboard({ userId }: DashboardProps) {
             ? calculateReward(data.difficulty as Difficulty).gold : 0)
         }, 0)
         if (earnedAfterCancel < currentShop.spentGold) throw new Error('SPENT_REWARD')
-        transaction.update(questRef, { completed: false, completedAt: null })
+        transaction.update(questRef, { completed: next.status === 'completed', completedAt: null })
       })
     } catch (cause) {
       if (cause instanceof Error && cause.message === 'SPENT_REWARD') {
@@ -304,7 +305,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // [추가] 수정 버튼을 눌렀을 때
   function startEditing(quest: Quest) {
-    if (quest.completed || busyId !== null || diariesLoading || closedDates.has(quest.dateKey)) return
+    if (!canQuestAction({ completed: quest.completed, closed: closedDates.has(quest.dateKey) }, 'edit') || busyId !== null || diariesLoading) return
 
     setEditingId(quest.id)
     setEditTitle(quest.title)
@@ -337,7 +338,7 @@ function Dashboard({ userId }: DashboardProps) {
 
     const target = quests.find((quest) => quest.id === editingId)
 
-    if (!target || target.completed || closedDates.has(target.dateKey)) {
+    if (!target || !canQuestAction({ completed: target.completed, closed: closedDates.has(target.dateKey) }, 'edit')) {
       setError('완료한 퀘스트는 수정할 수 없습니다.')
       return
     }
@@ -350,7 +351,8 @@ function Dashboard({ userId }: DashboardProps) {
       await runTransaction(db, async (transaction) => {
         const diary = await transaction.get(doc(db, 'users', userId, 'diaries', target.dateKey))
         const current = await transaction.get(questRef)
-        if (diary.exists() || !current.exists() || current.data().completed) throw new Error('DAY_CLOSED')
+        if (!current.exists()) throw new Error('QUEST_CHANGED')
+        transitionQuest({ completed: current.data().completed === true, closed: diary.exists() }, 'edit')
         transaction.update(questRef, {
           title: trimmedTitle,
           difficulty: editDifficulty,
@@ -369,7 +371,7 @@ function Dashboard({ userId }: DashboardProps) {
 
   // 퀘스트 삭제 (미완료 상태만)
   async function removeQuest(quest: Quest) {
-    if (quest.completed || busyId !== null || loading || diariesLoading || closedDates.has(quest.dateKey)) return
+    if (!canQuestAction({ completed: quest.completed, closed: closedDates.has(quest.dateKey) }, 'delete') || busyId !== null || loading || diariesLoading) return
 
     if (!window.confirm(`"${quest.title}" 퀘스트를 삭제할까요?`)) {
       return
@@ -387,7 +389,8 @@ function Dashboard({ userId }: DashboardProps) {
           transaction.get(questRef),
           transaction.get(dailyCountRef(userId, quest.dateKey)),
         ])
-        if (diary.exists() || !current.exists() || current.data().completed) throw new Error('DAY_CLOSED')
+        if (!current.exists()) throw new Error('QUEST_CHANGED')
+        transitionQuest({ completed: current.data().completed === true, closed: diary.exists() }, 'delete')
         const count = currentCount(counter, initialCount)
         transaction.delete(questRef)
         updateDailyCount(transaction, userId, quest.dateKey, Math.max(0, count - 1))
