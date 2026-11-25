@@ -16,6 +16,7 @@ import DiaryPanel, { readDiaries, type SavedDiary } from './DiaryPanel'
 import RetryQuests from './RetryQuests'
 import PageNavigation, { getPageFromHash, type QuestLogPage } from './PageNavigation'
 import JobOnboarding from './JobOnboarding'
+import { MAX_DAILY_QUESTS, DAILY_LIMIT_ERROR, countExistingQuests, currentCount, dailyCountRef, updateDailyCount } from './dailyQuestLimit'
 import './PageNavigation.css'
 import { EMPTY_SHOP, parseShop } from './shop/shopState'
 import {
@@ -190,11 +191,17 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
+      const initialCount = await countExistingQuests(userId, todayKey)
       const questRef = doc(collection(db, 'users', userId, 'quests'))
       const diaryRef = doc(db, 'users', userId, 'diaries', todayKey)
       await runTransaction(db, async (transaction) => {
-        const diary = await transaction.get(diaryRef)
+        const [diary, counter] = await Promise.all([
+          transaction.get(diaryRef),
+          transaction.get(dailyCountRef(userId, todayKey)),
+        ])
         if (diary.exists()) throw new Error('DAY_CLOSED')
+        const count = currentCount(counter, initialCount)
+        if (count >= MAX_DAILY_QUESTS) throw new Error(DAILY_LIMIT_ERROR)
         transaction.set(questRef, {
           title: trimmedTitle,
           difficulty,
@@ -204,13 +211,18 @@ function Dashboard({ userId }: DashboardProps) {
           createdAt: serverTimestamp(),
           completedAt: null,
         })
+        updateDailyCount(transaction, userId, todayKey, count + 1)
       })
 
       setTitle('')
       setDifficulty('보통')
       setCategory('공부·독서')
-    } catch {
-      setError('퀘스트 등록에 실패했습니다. 오늘이 마감되었는지 확인해 주세요.')
+    } catch (cause) {
+      if (cause instanceof Error && cause.message === DAILY_LIMIT_ERROR) {
+        setError(`하루에 최대 ${MAX_DAILY_QUESTS}개까지 등록할 수 있습니다.`)
+      } else {
+        setError('퀘스트 등록에 실패했습니다. 오늘이 마감되었는지 확인해 주세요.')
+      }
     } finally {
       setSaving(false)
     }
@@ -357,12 +369,18 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
+      const initialCount = await countExistingQuests(userId, quest.dateKey)
       const questRef = doc(db, 'users', userId, 'quests', quest.id)
       await runTransaction(db, async (transaction) => {
-        const diary = await transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey))
-        const current = await transaction.get(questRef)
+        const [diary, current, counter] = await Promise.all([
+          transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey)),
+          transaction.get(questRef),
+          transaction.get(dailyCountRef(userId, quest.dateKey)),
+        ])
         if (diary.exists() || !current.exists() || current.data().completed) throw new Error('DAY_CLOSED')
+        const count = currentCount(counter, initialCount)
         transaction.delete(questRef)
+        updateDailyCount(transaction, userId, quest.dateKey, Math.max(0, count - 1))
       })
 
       if (editingId === quest.id) {
@@ -477,10 +495,14 @@ function Dashboard({ userId }: DashboardProps) {
               <p>
                 완료한 퀘스트: {completedCount} / {todayQuests.length}
               </p>
+              <p>오늘 등록: {todayQuests.length} / {MAX_DAILY_QUESTS}</p>
             </div>
           </div>
 
           {todayClosed && <p className="quest-message">📖 오늘은 이미 마감되었습니다. 퀘스트를 수정할 수 없습니다.</p>}
+          {!todayClosed && todayQuests.length >= MAX_DAILY_QUESTS && (
+            <p className="quest-message">⚔️ 오늘의 퀘스트 15개를 모두 등록했습니다.</p>
+          )}
           {/* 퀘스트 등록 폼 */}
           <form className="quest-form" onSubmit={addQuest}>
             <input
@@ -512,7 +534,7 @@ function Dashboard({ userId }: DashboardProps) {
               <option value="어려움">어려움</option>
             </select>
 
-            <button type="submit" disabled={saving || loading || diariesLoading || todayClosed}>
+            <button type="submit" disabled={saving || loading || diariesLoading || todayClosed || todayQuests.length >= MAX_DAILY_QUESTS}>
               {saving ? '저장 중...' : '퀘스트 등록'}
             </button>
           </form>

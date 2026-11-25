@@ -3,6 +3,7 @@ import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase'
 import type { SavedDiary } from './DiaryPanel'
 import './RetryQuests.css'
+import { MAX_DAILY_QUESTS, DAILY_LIMIT_ERROR, countExistingQuests, currentCount, dailyCountRef, updateDailyCount } from './dailyQuestLimit'
 
 type Props = {
   userId: string
@@ -55,20 +56,24 @@ export default function RetryQuests({ userId, diaries, todayKey, todayClosed, lo
     setError('')
 
     try {
+      const initialCount = await countExistingQuests(userId, todayKey)
       const newQuestRef = doc(db, 'users', userId, 'quests', newId)
       const todayDiaryRef = doc(db, 'users', userId, 'diaries', todayKey)
       const sourceDiaryRef = doc(db, 'users', userId, 'diaries', candidate.dateKey)
 
       await runTransaction(db, async (tx) => {
         // 모든 읽기를 쓰기보다 먼저 수행하여 중복 클릭과 마감 경합을 처리합니다.
-        const [todayDiary, sourceDiary, existingQuest] = await Promise.all([
+        const [todayDiary, sourceDiary, existingQuest, counter] = await Promise.all([
           tx.get(todayDiaryRef),
           tx.get(sourceDiaryRef),
           tx.get(newQuestRef),
+          tx.get(dailyCountRef(userId, todayKey)),
         ])
         if (todayDiary.exists()) throw new Error('DAY_CLOSED')
         if (existingQuest.exists()) throw new Error('ALREADY_RETRIED')
         if (!sourceDiary.exists()) throw new Error('SOURCE_MISSING')
+        const count = currentCount(counter, initialCount)
+        if (count >= MAX_DAILY_QUESTS) throw new Error(DAILY_LIMIT_ERROR)
 
         const origin = sourceDiary.data().quests
         const item = Array.isArray(origin)
@@ -86,11 +91,14 @@ export default function RetryQuests({ userId, diaries, todayKey, todayClosed, lo
           createdAt: serverTimestamp(),
           retrySource: { dateKey: candidate.dateKey, questId: candidate.sourceId },
         })
+        updateDailyCount(tx, userId, todayKey, count + 1)
       })
       setMessage(`「${candidate.title}」 퀘스트를 오늘 다시 등록했습니다.`)
     } catch (cause) {
       if (cause instanceof Error && cause.message === 'DAY_CLOSED') {
         setError('오늘은 이미 마감했습니다. 다음 날 다시 도전할 수 있습니다.')
+      } else if (cause instanceof Error && cause.message === DAILY_LIMIT_ERROR) {
+        setError(`하루에 최대 ${MAX_DAILY_QUESTS}개까지 등록할 수 있습니다.`)
       } else if (cause instanceof Error && cause.message === 'ALREADY_RETRIED') {
         setError('이 퀘스트는 오늘 이미 다시 등록했습니다.')
       } else {
@@ -109,6 +117,9 @@ export default function RetryQuests({ userId, diaries, todayKey, todayClosed, lo
         과거 기록과 일기는 변경되지 않으며, 오늘 마감 후에는 등록할 수 없습니다.
       </p>
       {todayClosed && <p className="retry-status">📖 오늘은 이미 마감되었습니다. 내일 다시 도전해 주세요.</p>}
+      {!todayClosed && todayQuestIds.length >= MAX_DAILY_QUESTS && (
+        <p className="retry-status">⚔️ 오늘은 최대 15개까지 등록할 수 있습니다.</p>
+      )}
       {message && <p className="retry-success" role="status">{message}</p>}
       {error && <p className="retry-error" role="alert">{error}</p>}
       {loading ? (
@@ -126,7 +137,7 @@ export default function RetryQuests({ userId, diaries, todayKey, todayClosed, lo
                   <strong>{quest.title}</strong>
                   <span>{quest.dateKey} · {quest.category} · {quest.difficulty}</span>
                 </div>
-                <button type="button" disabled={todayClosed || loading || busyId !== null || exists}
+                <button type="button" disabled={todayClosed || loading || busyId !== null || exists || todayQuestIds.length >= MAX_DAILY_QUESTS}
                   onClick={() => { void retryQuest(quest) }}>
                   {exists ? '오늘 등록됨 ✓' : busyId === id ? '등록 중...' : '다시 도전'}
                 </button>
