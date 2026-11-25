@@ -34,9 +34,9 @@ const BASE_CHOICES = [
     { value: 'moon', label: '달빛 장식 (상점)' },
   ] },
 ]
-const KNOWN_HATS = ['none','wizard','crown','straw','helmet','hood']
-const KNOWN_OUTFITS = ['basic','cape','forest','overalls','mageRobe','armor','doctorCoat','clericRobe']
-const KNOWN_ACCESSORIES = ['none','star','moon','medicalBag','holySymbol']
+const KNOWN_HATS = ['none','wizard','crown','straw','helmet','hood', ...SHOP_ITEMS.filter(item => item.slot === 'hat').map(item => item.id)]
+const KNOWN_OUTFITS = ['basic','cape','forest','overalls','mageRobe','armor','doctorCoat','clericRobe', ...SHOP_ITEMS.filter(item => item.slot === 'outfit').map(item => item.id)]
+const KNOWN_ACCESSORIES = ['none','star','moon','medicalBag','holySymbol', ...SHOP_ITEMS.filter(item => item.slot === 'accessory').map(item => item.id)]
 
 function normalizeEquipment(raw: Record<string, unknown> | undefined): Required<CharacterEquipment> {
   return {
@@ -129,6 +129,7 @@ export default function EquipmentCustomizer({ userId }: { userId: string }) {
     ...choice,
     options: [...choice.options,
       ...(job ? JOB_GEAR_CHOICES[job].filter(item => item.slot === choice.slot).map(item => ({ value: item.value, label: item.label })) : []),
+      ...SHOP_ITEMS.filter(item => item.slot === choice.slot && item.job !== null && shop.ownedItemIds.includes(item.id)).map(item => ({ value: item.id, label: `${item.name} (구매)` })),
     ].filter((option, index, arr) => arr.findIndex(entry => entry.value === option.value) === index),
   }))
 

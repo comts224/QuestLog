@@ -4,9 +4,9 @@ import { DEFAULT_APPEARANCE, hairHex, skinHex, type CharacterAppearance } from '
 // 각 장비는 32x32 픽셀 좌표계에 별도 레이어로 그립니다.
 // 이후 상점과 인벤토리의 장착 상태를 이 props에 연결할 예정입니다.
 export type CharacterEquipment = {
-  hat?: 'none' | 'wizard' | 'crown' | 'straw' | 'helmet' | 'hood'
-  outfit?: 'basic' | 'cape' | 'forest' | 'overalls' | 'mageRobe' | 'armor' | 'doctorCoat' | 'clericRobe'
-  accessory?: 'none' | 'star' | 'moon' | 'medicalBag' | 'holySymbol'
+  hat?: 'none' | 'wizard' | 'crown' | 'straw' | 'helmet' | 'hood' | 'harvestHat' | 'arcaneHat' | 'royalHelm' | 'careCap' | 'haloHood'
+  outfit?: 'basic' | 'cape' | 'forest' | 'overalls' | 'mageRobe' | 'armor' | 'doctorCoat' | 'clericRobe' | 'fieldCoat' | 'cosmicRobe' | 'crimsonArmor' | 'healerCoat' | 'sunRobe'
+  accessory?: 'none' | 'star' | 'moon' | 'medicalBag' | 'holySymbol' | 'wheatCharm' | 'crystalOrb' | 'guardianBadge' | 'medicineKit' | 'blessedCharm'
 }
 
 type PixelCharacterProps = {
@@ -90,6 +90,22 @@ export default function PixelCharacter({ equipment = {}, appearance = DEFAULT_AP
         {hat === 'straw' && <g><rect x="9" y="5" width="14" height="5" fill="#dcb764"/><rect x="5" y="9" width="22" height="2" fill="#bf9142"/><rect x="9" y="7" width="14" height="2" fill="#735632"/></g>}
         {hat === 'helmet' && <g><rect x="8" y="5" width="16" height="8" fill="#aebfd0"/><rect x="14" y="3" width="4" height="5" fill="#d7e2e8"/><rect x="8" y="12" width="3" height="4" fill="#768aa0"/><rect x="21" y="12" width="3" height="4" fill="#768aa0"/></g>}
         {hat === 'hood' && <g><rect x="10" y="3" width="12" height="3" fill="#f8eacc"/><rect x="8" y="6" width="16" height="5" fill="#f8eacc"/><rect x="7" y="10" width="3" height="7" fill="#e1c482"/><rect x="22" y="10" width="3" height="7" fill="#e1c482"/></g>}
+        {/* 일일 직업 전용 상점 장비 레이어 */}
+        {hat === 'harvestHat' && <g><rect x="8" y="5" width="16" height="5" fill="#e5c46d"/><rect x="5" y="9" width="22" height="2" fill="#b98d45"/><rect x="12" y="7" width="9" height="2" fill="#f5e08f"/></g>}
+        {hat === 'arcaneHat' && <g><rect x="13" y="0" width="6" height="4" fill="#287e86"/><rect x="10" y="4" width="12" height="5" fill="#287e86"/><rect x="6" y="9" width="20" height="2" fill="#205e79"/><rect x="15" y="5" width="3" height="2" fill="#aaf4e3"/></g>}
+        {hat === 'royalHelm' && <g><rect x="8" y="5" width="16" height="8" fill="#d4c59b"/><rect x="14" y="2" width="4" height="6" fill="#e7b44c"/><rect x="8" y="12" width="3" height="4" fill="#aa945d"/><rect x="21" y="12" width="3" height="4" fill="#aa945d"/></g>}
+        {hat === 'careCap' && <g><rect x="9" y="5" width="14" height="6" fill="#58b3ba"/><rect x="7" y="9" width="18" height="2" fill="#33868f"/><rect x="15" y="6" width="2" height="4" fill="#fff"/><rect x="14" y="7" width="4" height="2" fill="#fff"/></g>}
+        {hat === 'haloHood' && <g><rect x="9" y="3" width="14" height="8" fill="#e3e8ff"/><rect x="7" y="10" width="3" height="7" fill="#92a8d7"/><rect x="22" y="10" width="3" height="7" fill="#92a8d7"/><rect x="13" y="4" width="7" height="2" fill="#82a2dc"/></g>}
+        {outfit === 'fieldCoat' && <g><rect x="8" y="18" width="16" height="10" fill="#48784d"/><rect x="10" y="18" width="3" height="8" fill="#a9cd71"/><rect x="19" y="18" width="3" height="8" fill="#a9cd71"/></g>}
+        {outfit === 'cosmicRobe' && <g><rect x="8" y="18" width="16" height="11" fill="#343c80"/><rect x="15" y="18" width="2" height="10" fill="#b2b4ee"/><rect x="11" y="21" width="2" height="2" fill="#ffe79c"/><rect x="20" y="24" width="2" height="2" fill="#ffe79c"/></g>}
+        {outfit === 'crimsonArmor' && <g><rect x="9" y="17" width="14" height="10" fill="#a94b58"/><rect x="7" y="18" width="4" height="5" fill="#df8a83"/><rect x="21" y="18" width="4" height="5" fill="#df8a83"/><rect x="14" y="18" width="4" height="6" fill="#e7b667"/></g>}
+        {outfit === 'healerCoat' && <g><rect x="8" y="18" width="16" height="11" fill="#bde6ef"/><rect x="14" y="18" width="5" height="10" fill="#f6fbff"/><rect x="16" y="20" width="2" height="6" fill="#5d9da9"/></g>}
+        {outfit === 'sunRobe' && <g><rect x="8" y="18" width="16" height="11" fill="#ead17b"/><rect x="14" y="18" width="5" height="11" fill="#fff5d0"/><rect x="16" y="21" width="2" height="6" fill="#cc9950"/></g>}
+        {accessory === 'wheatCharm' && <g><rect x="26" y="15" width="2" height="11" fill="#96703b"/><rect x="24" y="16" width="6" height="3" fill="#f4d675"/><rect x="24" y="21" width="6" height="3" fill="#f4d675"/></g>}
+        {accessory === 'crystalOrb' && <g><rect x="24" y="15" width="7" height="7" fill="#79d5ee"/><rect x="26" y="14" width="3" height="9" fill="#bcf3ff"/><rect x="24" y="17" width="7" height="3" fill="#a5eaff"/></g>}
+        {accessory === 'guardianBadge' && <g><rect x="25" y="15" width="6" height="7" fill="#c4d2e8"/><rect x="27" y="17" width="2" height="4" fill="#6483b5"/><rect x="26" y="22" width="4" height="5" fill="#b99c4e"/></g>}
+        {accessory === 'medicineKit' && <g><rect x="24" y="20" width="8" height="7" fill="#ebd8c5"/><rect x="26" y="18" width="4" height="3" fill="#b6a296"/><rect x="27" y="21" width="2" height="5" fill="#df5c64"/><rect x="25" y="23" width="6" height="2" fill="#df5c64"/></g>}
+        {accessory === 'blessedCharm' && <g><rect x="25" y="15" width="6" height="9" fill="#e8bb49"/><rect x="27" y="13" width="2" height="12" fill="#fff0ad"/><rect x="24" y="17" width="8" height="3" fill="#fff0ad"/></g>}
         {/* 액세서리 레이어 */}
         {accessory === 'medicalBag' && <g><rect x="24" y="21" width="7" height="6" fill="#93665a"/><rect x="26" y="19" width="3" height="3" fill="#cba99b"/><rect x="27" y="22" width="2" height="4" fill="#fff3ef"/><rect x="25" y="23" width="5" height="2" fill="#fff3ef"/></g>}
         {accessory === 'holySymbol' && <g><rect x="26" y="15" width="2" height="9" fill="#f2d071"/><rect x="23" y="18" width="8" height="2" fill="#f2d071"/></g>}
