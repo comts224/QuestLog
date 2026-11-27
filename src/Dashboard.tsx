@@ -11,6 +11,7 @@ import { db } from './firebase'
 import { DailyQuestCreator } from './factories/questFactory'
 import { canQuestAction, transitionQuest } from './quest/questState'
 import { CompleteQuestCommand, CancelQuestCompletionCommand, QuestCommandRunner } from './commands/questCommands'
+import { QuestEventSubject, type QuestEvent } from './observers/questEvents'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
@@ -97,12 +98,51 @@ function Dashboard({ userId }: DashboardProps) {
   const [error, setError] = useState('')
   // 완료 보상은 Firestore 저장 성공 후에만 잠깐 표시합니다.
   const [rewardPopup, setRewardPopup] = useState<{ id: string; exp: number; gold: number; sequence: number } | null>(null)
+  const [actionNotice, setActionNotice] = useState('')
+  // Subject는 Dashboard 인스턴스마다 하나씩 생성되어 사용자 간 이벤트가 섞이지 않습니다.
+  const [questEvents] = useState(() => new QuestEventSubject())
   const [shopState, setShopState] = useState(EMPTY_SHOP)
   const [shopLoading, setShopLoading] = useState(true)
   const [diaries, setDiaries] = useState<SavedDiary[]>([])
   const [diariesLoading, setDiariesLoading] = useState(true)
   const [todayKey, setTodayKey] = useState(getTodayKey())
   const [activePage, setActivePage] = useState<QuestLogPage>(getPageFromHash)
+
+  // Observer 패턴: 완료 보상 팝업과 완료 취소 안내가 같은 이벤트를 독립적으로 구독합니다.
+  // Firestore onSnapshot은 서버 데이터 동기화, 이 Subject는 앱 내부 행동 알림에 사용합니다.
+  useEffect(() => {
+    const unsubscribeReward = questEvents.subscribe({
+      onQuestEvent(event: QuestEvent) {
+        if (event.type === 'quest-completed') {
+          setRewardPopup((previous) => ({
+            id: event.questId,
+            exp: event.exp,
+            gold: event.gold,
+            sequence: (previous?.sequence ?? 0) + 1,
+          }))
+          setActionNotice('')
+        }
+      },
+    })
+    const unsubscribeNotice = questEvents.subscribe({
+      onQuestEvent(event: QuestEvent) {
+        if (event.type === 'quest-completion-cancelled') {
+          setRewardPopup(null)
+          setActionNotice('퀘스트 완료가 취소되었습니다.')
+        }
+      },
+    })
+    return () => {
+      unsubscribeReward()
+      unsubscribeNotice()
+    }
+  }, [questEvents])
+
+  useEffect(() => {
+    if (!actionNotice) return
+    const timer = window.setTimeout(() => setActionNotice(''), 2000)
+    return () => window.clearTimeout(timer)
+  }, [actionNotice])
 
   // 주소의 #character/#quests/#shop/#diary와 메뉴 상태를 동기화합니다.
   useEffect(() => {
@@ -242,7 +282,8 @@ function Dashboard({ userId }: DashboardProps) {
       // Command 패턴: 화면은 완료 명령을 실행하고, 실제 저장 규칙은 명령 객체에 위임합니다.
       await new QuestCommandRunner().run(new CompleteQuestCommand({ userId, questId: quest.id, dateKey: quest.dateKey }))
       const reward = calculateReward(quest.difficulty)
-      setRewardPopup((previous) => ({ id: quest.id, exp: reward.exp, gold: reward.gold, sequence: (previous?.sequence ?? 0) + 1 }))
+      // Command가 Firestore에 성공적으로 저장한 후에만 이벤트를 발행합니다.
+      questEvents.notify({ type: 'quest-completed', questId: quest.id, exp: reward.exp, gold: reward.gold })
     } catch {
       setError('퀘스트 완료 처리에 실패했습니다.')
     } finally {
@@ -272,6 +313,7 @@ function Dashboard({ userId }: DashboardProps) {
         dateKey: quest.dateKey,
         questIds: quests.map((item) => item.id),
       }))
+      questEvents.notify({ type: 'quest-completion-cancelled', questId: quest.id })
     } catch (cause) {
       if (cause instanceof Error && cause.message === 'SPENT_REWARD') {
         setError('이미 상점에서 사용한 골드 때문에 완료를 취소할 수 없습니다.')
@@ -485,6 +527,7 @@ function Dashboard({ userId }: DashboardProps) {
           <div className="quest-heading">
             <div>
               <h2>오늘의 퀘스트</h2>
+              {actionNotice && <p role="status" aria-live="polite">{actionNotice}</p>}
               <p>
                 완료한 퀘스트: {completedCount} / {todayQuests.length}
               </p>
