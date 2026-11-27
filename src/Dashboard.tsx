@@ -10,6 +10,7 @@ import {
 import { db } from './firebase'
 import { DailyQuestCreator } from './factories/questFactory'
 import { canQuestAction, transitionQuest } from './quest/questState'
+import { CompleteQuestCommand, CancelQuestCompletionCommand, QuestCommandRunner } from './commands/questCommands'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
@@ -238,15 +239,8 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      const questRef = doc(db, 'users', userId, 'quests', quest.id)
-      const diaryRef = doc(db, 'users', userId, 'diaries', quest.dateKey)
-      await runTransaction(db, async (transaction) => {
-        const diary = await transaction.get(diaryRef)
-        const current = await transaction.get(questRef)
-        if (!current.exists()) throw new Error('QUEST_CHANGED')
-        const next = transitionQuest({ completed: current.data().completed === true, closed: diary.exists() }, 'complete')
-        transaction.update(questRef, { completed: next.status === 'completed', completedAt: serverTimestamp() })
-      })
+      // Command 패턴: 화면은 완료 명령을 실행하고, 실제 저장 규칙은 명령 객체에 위임합니다.
+      await new QuestCommandRunner().run(new CompleteQuestCommand({ userId, questId: quest.id, dateKey: quest.dateKey }))
       const reward = calculateReward(quest.difficulty)
       setRewardPopup((previous) => ({ id: quest.id, exp: reward.exp, gold: reward.gold, sequence: (previous?.sequence ?? 0) + 1 }))
     } catch {
@@ -271,27 +265,13 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      const questRef = doc(db, 'users', userId, 'quests', quest.id)
-      const walletRef = doc(db, 'users', userId, 'shop', 'state')
-      // 최신 화면의 퀘스트 ID를 모두 트랜잭션에서 다시 읽어 합산합니다.
-      const questRefs = quests.map((item) => doc(db, 'users', userId, 'quests', item.id))
-      await runTransaction(db, async (transaction) => {
-        const diarySnap = await transaction.get(doc(db, 'users', userId, 'diaries', quest.dateKey))
-        const walletSnap = await transaction.get(walletRef)
-        const currentShop = parseShop(walletSnap.data())
-        const questDocs = await Promise.all(questRefs.map((ref) => transaction.get(ref)))
-        const target = questDocs.find((item) => item.id === questRef.id)
-        if (!target?.exists()) throw new Error('QUEST_CHANGED')
-        const next = transitionQuest({ completed: target.data().completed === true, closed: diarySnap.exists() }, 'cancel')
-        const earnedAfterCancel = questDocs.reduce((sum, item) => {
-          if (!item.exists() || item.id === questRef.id) return sum
-          const data = item.data()
-          return sum + (data.completed && ['쉬움', '보통', '어려움'].includes(data.difficulty)
-            ? calculateReward(data.difficulty as Difficulty).gold : 0)
-        }, 0)
-        if (earnedAfterCancel < currentShop.spentGold) throw new Error('SPENT_REWARD')
-        transaction.update(questRef, { completed: next.status === 'completed', completedAt: null })
-      })
+      // 골드 잔액 및 State 전이 확인은 CancelQuestCompletionCommand 내부에서 수행합니다.
+      await new QuestCommandRunner().run(new CancelQuestCompletionCommand({
+        userId,
+        questId: quest.id,
+        dateKey: quest.dateKey,
+        questIds: quests.map((item) => item.id),
+      }))
     } catch (cause) {
       if (cause instanceof Error && cause.message === 'SPENT_REWARD') {
         setError('이미 상점에서 사용한 골드 때문에 완료를 취소할 수 없습니다.')
