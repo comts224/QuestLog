@@ -12,6 +12,7 @@ import { DailyQuestCreator } from './factories/questFactory'
 import { canQuestAction, transitionQuest } from './quest/questState'
 import { CompleteQuestCommand, CancelQuestCompletionCommand, QuestCommandRunner } from './commands/questCommands'
 import { QuestEventSubject, type QuestEvent } from './observers/questEvents'
+import { FirestoreQuestAdapter, CATEGORIES, type Quest } from './adapters/questAdapter'
 import './App.css'
 import ProfileNames from './ProfileNames'
 import EquipmentCustomizer from './EquipmentCustomizer'
@@ -32,22 +33,10 @@ import {
 } from './strategies/rewardStrategy'
 
 
-type Quest = {
-  id: string
-  title: string
-  difficulty: Difficulty
-  category: QuestCategory
-  completed: boolean
-  dateKey: string
-}
-
 type DashboardProps = {
   userId: string
 }
 
-// 기존 퀘스트에는 category 필드가 없을 수 있습니다.
-const DEFAULT_CATEGORY: QuestCategory = '과제·업무'
-const CATEGORIES: QuestCategory[] = ['공부·독서', '운동', '생활·건강', '과제·업무']
 
 // 한국시간 기준 오늘 날짜
 function getTodayKey(): string {
@@ -161,18 +150,11 @@ function Dashboard({ userId }: DashboardProps) {
     const unsubscribe = onSnapshot(
       collection(db, 'users', userId, 'quests'),
       (snapshot) => {
-        const loadedQuests: Quest[] = snapshot.docs.map((item) => {
-          const data = item.data()
-
-          return {
-            id: item.id,
-            title: data.title,
-            difficulty: data.difficulty,
-            category: CATEGORIES.includes(data.category) ? data.category : DEFAULT_CATEGORY,
-            completed: data.completed,
-            dateKey: data.dateKey,
-          }
-        })
+        // Adapter 패턴: Firestore 문서 형태를 UI에서 쓰는 Quest로 변환합니다.
+        const adapter = new FirestoreQuestAdapter()
+        const loadedQuests: Quest[] = snapshot.docs.map((item) =>
+          adapter.adapt(item.id, item.data())
+        )
 
         setQuests(loadedQuests)
         setLoading(false)
