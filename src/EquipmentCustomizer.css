@@ -52,3 +52,224 @@
 .equipment-error { color: #c32d4b; font-size: .85rem; margin: 10px 0 0; }
 
 .equipment-controls .equipment-hint { line-height: 1.5; }
+
+/* ===== QuestLog 29: 해변 마을의 모험가 (나의 모험가 페이지 전용) =====
+   - 기존 JSX 및 Firebase 로직 변경 없음
+   - 제공된 해변 픽셀아트의 분위기만 참고한 새 배경 에셋
+*/
+.questlog-page .character-panel {
+  --coast-ink: #304e4a;
+  --coast-line: #b4cdb0;
+  --coast-paper: #fffcf0;
+  position: relative;
+  overflow: hidden;
+  padding: clamp(18px, 3.5vw, 34px);
+  border: 2px solid #b7cfae;
+  border-radius: 22px;
+  background: #f8f6e9;
+  color: var(--coast-ink);
+  box-shadow: 0 8px 0 #d5ddbc, 0 16px 32px #314b391a;
+  text-align: left;
+}
+.questlog-page .character-panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  color: #365a4b;
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+  letter-spacing: -.04em;
+}
+.questlog-page .character-panel > h2::before {
+  content: '✦';
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 2px solid #7caa7c;
+  border-radius: 10px;
+  color: #fff8d6;
+  background: #5d9d77;
+  box-shadow: 3px 3px 0 #c9d5af;
+  font-size: 20px;
+}
+.questlog-page .character-panel .equipment-customizer {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+  justify-items: stretch;
+  margin: 0 0 22px;
+}
+.questlog-page .character-panel .equipment-customizer .character-image {
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: clamp(270px, 36vw, 385px);
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border: 4px solid #fff9d8;
+  border-radius: 16px;
+  background: #66cee0 url('./assets/coastal-village.svg') center 53% / cover no-repeat;
+  box-shadow: 0 0 0 2px #83b7a3, 0 7px 0 #d9dfc7;
+}
+/* 캐릭터는 배경의 중앙 앞쪽에서 움직이며, 숨쉬기/팔 애니메이션을 유지합니다. */
+.questlog-page .character-panel .character-image .pixel-character {
+  width: clamp(145px, 21vw, 210px);
+  height: clamp(145px, 21vw, 210px);
+  margin: 0 auto 13px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 5px 0 #356c4d80);
+}
+.questlog-page .character-panel .character-image::after {
+  content: '';
+  position: absolute;
+  bottom: 11px;
+  left: 50%;
+  width: clamp(105px, 16vw, 166px);
+  height: 19px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #356d46a3;
+  filter: blur(5px);
+  pointer-events: none;
+  z-index: 0;
+}
+.questlog-page .character-panel .equipment-action-button {
+  right: 13px;
+  bottom: 13px;
+  z-index: 3;
+  width: 39px;
+  height: 39px;
+  border: 2px solid #446d58;
+  border-radius: 9px;
+  background: #fff5d1;
+  color: #35644b;
+  box-shadow: 3px 4px 0 #406e55a8;
+}
+.questlog-page .character-panel .equipment-action-button:hover:not(:disabled) {
+  background: #fff0b3;
+  box-shadow: 3px 5px 0 #406e55a8;
+}
+.questlog-page .character-panel .appearance-customizer,
+.questlog-page .character-panel .equipment-controls {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 2px solid #bdd1b1;
+  border-radius: 14px;
+  background: var(--coast-paper);
+  box-shadow: 0 4px 0 #e4e7d4;
+  color: var(--coast-ink);
+  text-align: left;
+}
+.questlog-page .character-panel .appearance-customizer h3,
+.questlog-page .character-panel .equipment-controls h3,
+.questlog-page .character-panel .character-stats h3 {
+  color: #3e7157;
+  letter-spacing: -.02em;
+}
+.questlog-page .character-panel .equipment-row select,
+.questlog-page .character-panel .profile-names-form input {
+  border: 1px solid #a5c3aa;
+  background: #fffdf5;
+  color: #304d46;
+}
+.questlog-page .character-panel .appearance-swatch.selected {
+  outline-color: #3b936a;
+}
+.questlog-page .character-panel .profile-names {
+  padding: 16px 18px;
+  margin: 10px 0 18px;
+  border: 2px solid #cbd9bf;
+  border-radius: 14px;
+  background: #eef4e1;
+  text-align: center;
+}
+.questlog-page .character-panel .profile-names-edit,
+.questlog-page .character-panel .profile-names-actions button:not(.profile-names-cancel) {
+  background: #488b68;
+  color: #fff;
+}
+.questlog-page .character-panel .exp-label {
+  color: #466b56;
+  font-weight: 800;
+}
+.questlog-page .character-panel .exp-bar {
+  height: 15px;
+  border: 2px solid #a6c2a4;
+  border-radius: 5px;
+  background: #e3ead7;
+  overflow: hidden;
+}
+.questlog-page .character-panel .exp-fill {
+  border-radius: 2px;
+  background: linear-gradient(90deg, #68c397, #3b956b);
+}
+.questlog-page .character-panel .gold {
+  display: inline-block;
+  padding: 9px 16px;
+  border: 2px solid #e2c27b;
+  border-radius: 10px;
+  background: #fff2cc;
+  color: #745a28;
+}
+.questlog-page .character-panel .character-info {
+  color: #597665;
+  line-height: 1.6;
+}
+.questlog-page .character-panel .character-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  padding: 18px;
+  margin-top: 18px;
+  border: 2px solid #c5d8bd;
+  border-radius: 14px;
+  background: #eff5e6;
+}
+.questlog-page .character-panel .character-stats h3 {
+  grid-column: 1 / -1;
+  margin: 0 0 6px;
+}
+.questlog-page .character-panel .character-stats p {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #d5e1cd;
+  border-radius: 8px;
+  background: #fffdf2;
+  color: #385947;
+  font-weight: 700;
+}
+@media (max-width: 740px) {
+  .questlog-page .character-panel .equipment-customizer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+  .questlog-page .character-panel .equipment-customizer .character-image {
+    grid-column: 1;
+    height: 285px;
+    background-position: 56% center;
+  }
+  .questlog-page .character-panel .equipment-row { flex-wrap: wrap; }
+  .questlog-page .character-panel .equipment-row select {
+    max-width: 100%;
+    flex: 1 1 150px;
+  }
+}
+@media (max-width: 430px) {
+  .questlog-page .character-panel .character-stats { grid-template-columns: 1fr; }
+  .questlog-page .character-panel .character-image .pixel-character { width: 150px; height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .questlog-page .character-panel .character-image .pixel-character { filter: none; }
+}

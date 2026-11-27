@@ -1,0 +1,79 @@
+/* QuestLog 29단계: 크림 + 해변 마을 색상 테마 (시범 적용)
+   기존 캐릭터, 애니메이션, 해변 배경, 게임 로직은 변경하지 않습니다.
+   main.tsx에서 가장 마지막에 가져와 기존 CSS 색상 위에 적용합니다. */
+:root {
+  --ql-cream: #f6f3e7;
+  --ql-paper: #fffcf3;
+  --ql-sage: #77a987;
+  --ql-sage-dark: #385d4d;
+  --ql-border: #b8d1ae;
+  --ql-muted: #5b7163;
+  background: var(--ql-cream);
+  color: #304e43;
+}
+html, body, #root { min-height: 100%; }
+body { background: var(--ql-cream); color: #304e43; }
+.app { color: #304e43; }
+.header h1, .quest-heading h2, .panel h2 { color: #385d4d; }
+.eyebrow { color: #488469; }
+.header p, .quest-heading p, .character-info, .quest-item p, .quest-message { color: #5b7163; }
+
+/* 상단의 계정 표시줄과 네 가지 탭 */
+.account-bar { background: #fffcf3; border-bottom-color: #d4dec7; color: #385d4d; }
+.account-bar button { background: #e4efdc; color: #315b45; border: 1px solid #c3d7bb; }
+.account-bar button:hover { background: #d4e6cb; }
+.questlog-nav-link { background: #fffcf3; border-color: #c6d7bb; color: #385d4d; }
+.questlog-nav-link:hover { background: #eef4e7; border-color: #77a987; }
+.questlog-nav-link.is-active {
+  background: #4d8062; border-color: #4d8062; color: #ffffff;
+  box-shadow: 0 5px 15px rgba(42, 87, 59, .18);
+}
+.questlog-nav-link:focus-visible,
+.questlog-dashboard button:focus-visible { outline-color: #4c9373; }
+
+/* 일관된 밝은 종이 카드와 퀘스트 영역 */
+.panel { background: var(--ql-paper); border-color: #cfddc5; box-shadow: 0 8px 26px rgba(56, 93, 77, .07); }
+.quest-item { background: #fffef8; border-color: #dce5d4; }
+.quest-item:hover { border-color: #afcaa9; }
+.quest-form input, .quest-form select { background: #fffef9; border-color: #bfd3b8; color: #304e43; }
+.quest-item button:not(.delete-button), .quest-form button { background: #4f8667; color: #ffffff; }
+.quest-item button:not(.delete-button):hover:not(:disabled),
+.quest-form button:hover:not(:disabled) { background: #386b51; }
+.quest-item button:disabled, .quest-form button:disabled { opacity: .62; }
+.character-image { background-color: #edf4e6; }
+.exp-bar { background: #e5eadb; }
+.exp-fill { background: #65b99c; }
+.character-info { color: #5b7163; }
+
+/* 상점과 장비 설정: 아이템 카드가 연보라로 떠 보이지 않도록 */
+.shop-item { background: #f1f5e8; border-color: #c8d9bd; color: #345747; }
+.shop-rotation { background: #ecf2e4; color: #43644d; }
+.equipment-controls { background: #f1f5e8; border-color: #c8d9bd; color: #345747; }
+.equipment-row select { background: #fffdf5; border-color: #afc9b2; color: #345747; }
+.questlog-dashboard .shop-item:hover { border-color: #83ae87; box-shadow: 0 9px 22px rgba(56, 93, 77, .13); }
+.questlog-dashboard .quest-item:hover { box-shadow: 0 5px 14px rgba(56, 93, 77, .09); }
+.ql-reward-pop { border-color: #b9d1aa; background: #fffaf0; color: #385d4d; }
+
+/* 로그인 화면과 첫 직업 선택 모달에도 같은 색상 언어 적용 */
+.login-page { background: linear-gradient(145deg, #f6f3e7, #e5efdd); }
+.login-card { background: #fffcf3; border-color: #cbddc2; box-shadow: 0 16px 45px rgba(56, 93, 77, .12); }
+.login-card h1, .login-card h2, .login-card label { color: #385d4d; }
+.login-eyebrow, .login-description, .login-switch { color: #577862; }
+.login-card input { background: #fffefa; border-color: #bfd3b8; color: #304e43; }
+.login-card input:focus { outline-color: #80b59b; }
+.login-submit { background: #4f8667; }
+.login-submit:hover:not(:disabled) { background: #386b51; }
+.login-switch button { color: #397454; }
+.auth-loading { color: #385d4d; }
+.job-onboarding-dialog { background: #fffcf3; border-color: #a8c59f; color: #304e43; }
+.job-onboarding-dialog h2, .job-onboarding-eyebrow { color: #385d4d; }
+.job-onboarding-description, .job-onboarding-footnote, .job-onboarding-flavor { color: #5b7163; }
+.job-onboarding-option { background: #fffef9; border-color: #c8d9bd; color: #304e43; }
+.job-onboarding-option.is-selected { background: #e5f1df; border-color: #5a936d; }
+.job-onboarding-option input { accent-color: #4f8667; }
+.job-onboarding-confirm { background: #4f8667; }
+.job-onboarding-starter { color: #52755f; }
+.job-onboarding-current { background: #edf4e6; border-color: #b8d1ae; color: #385d4d; }
+
+/* 미완료 퀘스트 다시 도전/일기장 안의 짙은 패널은 기존 대비를 유지합니다.
+   액션/위험 버튼은 빨간색을 유지해 상태 의미가 바뀌지 않도록 합니다. */
