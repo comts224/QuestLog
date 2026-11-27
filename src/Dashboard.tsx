@@ -11,7 +11,8 @@ import { db } from './firebase'
 import { DailyQuestCreator } from './factories/questFactory'
 import { canQuestAction, transitionQuest } from './quest/questState'
 import { CompleteQuestCommand, CancelQuestCompletionCommand, QuestCommandRunner } from './commands/questCommands'
-import { QuestEventSubject, type QuestEvent } from './observers/questEvents'
+import { type QuestEvent } from './observers/questEvents'
+import { QuestEventRegistry } from './singletons/questEventRegistry'
 import { FirestoreQuestAdapter, CATEGORIES, type Quest } from './adapters/questAdapter'
 import './App.css'
 import ProfileNames from './ProfileNames'
@@ -88,8 +89,8 @@ function Dashboard({ userId }: DashboardProps) {
   // 완료 보상은 Firestore 저장 성공 후에만 잠깐 표시합니다.
   const [rewardPopup, setRewardPopup] = useState<{ id: string; exp: number; gold: number; sequence: number } | null>(null)
   const [actionNotice, setActionNotice] = useState('')
-  // Subject는 Dashboard 인스턴스마다 하나씩 생성되어 사용자 간 이벤트가 섞이지 않습니다.
-  const [questEvents] = useState(() => new QuestEventSubject())
+  // Singleton Registry는 앱 전체에서 하나이며, 사용자별 Subject를 분리해 이벤트 혼선을 막습니다.
+  const questEvents = QuestEventRegistry.getInstance().forUser(userId)
   const [shopState, setShopState] = useState(EMPTY_SHOP)
   const [shopLoading, setShopLoading] = useState(true)
   const [diaries, setDiaries] = useState<SavedDiary[]>([])
