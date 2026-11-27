@@ -10,7 +10,7 @@ import {
 import { db } from './firebase'
 import { DailyQuestCreator } from './factories/questFactory'
 import { canQuestAction, transitionQuest } from './quest/questState'
-import { CompleteQuestCommand, CancelQuestCompletionCommand, QuestCommandRunner } from './commands/questCommands'
+import { QuestActionFacade } from './facades/questActionFacade'
 import { type QuestEvent } from './observers/questEvents'
 import { QuestEventRegistry } from './singletons/questEventRegistry'
 import { FirestoreQuestAdapter, CATEGORIES, type Quest } from './adapters/questAdapter'
@@ -262,11 +262,12 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      // Command 패턴: 화면은 완료 명령을 실행하고, 실제 저장 규칙은 명령 객체에 위임합니다.
-      await new QuestCommandRunner().run(new CompleteQuestCommand({ userId, questId: quest.id, dateKey: quest.dateKey }))
-      const reward = calculateReward(quest.difficulty)
-      // Command가 Firestore에 성공적으로 저장한 후에만 이벤트를 발행합니다.
-      questEvents.notify({ type: 'quest-completed', questId: quest.id, exp: reward.exp, gold: reward.gold })
+      // Facade 패턴: Command 실행과 저장 성공 후 Observer 통지를 한 번에 처리합니다.
+      await new QuestActionFacade(userId).complete({
+        questId: quest.id,
+        dateKey: quest.dateKey,
+        difficulty: quest.difficulty,
+      })
     } catch {
       setError('퀘스트 완료 처리에 실패했습니다.')
     } finally {
@@ -289,14 +290,12 @@ function Dashboard({ userId }: DashboardProps) {
     setError('')
 
     try {
-      // 골드 잔액 및 State 전이 확인은 CancelQuestCompletionCommand 내부에서 수행합니다.
-      await new QuestCommandRunner().run(new CancelQuestCompletionCommand({
-        userId,
+      // Facade는 완료 취소 Command를 실행하고, 성공한 경우에만 알림을 발행합니다.
+      await new QuestActionFacade(userId).cancelCompletion({
         questId: quest.id,
         dateKey: quest.dateKey,
         questIds: quests.map((item) => item.id),
-      }))
-      questEvents.notify({ type: 'quest-completion-cancelled', questId: quest.id })
+      })
     } catch (cause) {
       if (cause instanceof Error && cause.message === 'SPENT_REWARD') {
         setError('이미 상점에서 사용한 골드 때문에 완료를 취소할 수 없습니다.')
